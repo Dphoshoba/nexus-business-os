@@ -1,0 +1,8 @@
+{
+  "name": "Nexus Business OS",
+  "description": "A comprehensive, modular business platform featuring CRM, Automations, Bookings, and AI-powered insights designed with a modern Linear-inspired aesthetic.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
