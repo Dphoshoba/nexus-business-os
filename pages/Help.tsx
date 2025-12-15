@@ -617,13 +617,24 @@ export const Help: React.FC = () => {
                         )}
                     </div>
                     <div className="p-4 border-t border-border dark:border-border-dark bg-surface-subtle/50 dark:bg-surface-subtle-dark/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                <MessageSquare className="w-4 h-4" />
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-md">
+                                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <span className="font-serif text-xs font-bold text-text-primary dark:text-text-primary-dark tracking-wide">
+                                    ETERNAL ECHOES & VISIONS
+                                </span>
                             </div>
-                            <div>
-                                <p className="text-xs font-bold text-text-primary dark:text-text-primary-dark">Need Human Help?</p>
-                                <button className="text-xs text-primary-600 hover:underline">Contact Support</button>
+                            
+                            <div className="flex items-center gap-3 pl-1">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                                    <MessageSquare className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-text-primary dark:text-text-primary-dark">Need Human Help?</p>
+                                    <a href="mailto:support@eternalechoes.com" className="text-xs text-primary-600 hover:underline">Contact Support</a>
+                                </div>
                             </div>
                         </div>
                     </div>

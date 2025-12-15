@@ -229,12 +229,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setCurren
           {/* Organization Switcher */}
           <div className={`h-16 flex items-center border-b border-border dark:border-border-dark/50 justify-between ${isCollapsed ? 'px-2 justify-center' : 'px-6'}`}>
             <button className={`flex items-center gap-3 hover:bg-surface-muted dark:hover:bg-surface-muted-dark rounded-lg p-1 transition-colors ${isCollapsed ? 'w-auto' : 'w-full -ml-1'}`}>
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-800 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20 shrink-0">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center shadow-lg shrink-0">
+                <Sun className="w-5 h-5 text-white fill-white" />
               </div>
               {!isCollapsed && (
                   <div className="flex-1 text-left rtl:text-right overflow-hidden">
-                    <span className="block font-bold text-sm tracking-tight truncate">Nexus Inc.</span>
+                    <span className="block font-serif font-bold text-sm tracking-tight truncate">Eternal Echoes & Visions</span>
                     <span className="block text-[10px] text-text-tertiary truncate">{subscriptionPlan} Plan</span>
                   </div>
               )}

@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button, Input, Card } from '../components/ui/Primitives';
-import { Mail, Lock, ArrowRight, Github, Check, ChevronRight, LayoutDashboard, Users, CreditCard, Bot, Globe, Shield, Zap, Menu, X, TrendingUp, Briefcase, Server, CheckCircle2, Search, Bell, MoreHorizontal } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Github, Check, ChevronRight, LayoutDashboard, Users, CreditCard, Bot, Globe, Shield, Zap, Menu, X, TrendingUp, Briefcase, Server, CheckCircle2, Search, Bell, MoreHorizontal, Sun } from 'lucide-react';
 
 export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     const [view, setView] = useState<'landing' | 'login' | 'signup'>('landing');
@@ -26,9 +25,11 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             {/* Navigation */}
             <nav className="fixed top-0 w-full z-50 bg-surface/80 dark:bg-[#0B1120]/80 backdrop-blur-md border-b border-border/50 dark:border-white/10">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setView('landing'); }}>
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-500/20">N</div>
-                        <span className="font-bold text-xl tracking-tight">Nexus</span>
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setView('landing'); }}>
+                        <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                            <Sun className="w-5 h-5 fill-white text-white" />
+                        </div>
+                        <span className="font-serif font-bold text-xl tracking-wide text-text-primary dark:text-white">Eternal Echoes & Visions</span>
                     </div>
 
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-secondary dark:text-gray-400">
@@ -110,8 +111,10 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                             <div className="w-64 bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-white/10 p-4 hidden md:flex flex-col gap-4">
                                 {/* Brand */}
                                 <div className="flex items-center gap-3 px-2 mb-2">
-                                    <div className="w-8 h-8 bg-primary-600 rounded-lg shadow-md shadow-primary-500/30"></div>
-                                    <div className="h-4 w-24 bg-slate-400 dark:bg-white/20 rounded-md"></div>
+                                    <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg shadow-md flex items-center justify-center">
+                                        <Sun className="w-5 h-5 text-white fill-white" />
+                                    </div>
+                                    <div className="h-4 w-32 bg-slate-400 dark:bg-white/20 rounded-md"></div>
                                 </div>
                                 {/* Nav Items */}
                                 <div className="space-y-1">
@@ -373,9 +376,12 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                         <button onClick={() => setView('signup')} className="px-8 py-4 bg-white text-primary-900 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-xl">
                             Get Started for Free
                         </button>
-                        <button className="px-8 py-4 bg-transparent border border-white/20 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors">
+                        <a 
+                            href="mailto:sales@eternalechoes.com"
+                            className="px-8 py-4 bg-transparent border border-white/20 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors inline-flex items-center justify-center"
+                        >
                             Contact Sales
-                        </button>
+                        </a>
                     </div>
                     <p className="mt-6 text-sm text-primary-200/60">No credit card required. Cancel anytime.</p>
                 </div>
@@ -385,11 +391,13 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             <footer className="bg-surface dark:bg-[#0B1120] border-t border-border dark:border-white/10 py-12 px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-primary-600 rounded flex items-center justify-center text-white text-xs font-bold">N</div>
-                        <span className="font-bold text-lg dark:text-white">Nexus</span>
+                        <div className="w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-600 rounded flex items-center justify-center text-white">
+                            <Sun className="w-3.5 h-3.5 fill-current" />
+                        </div>
+                        <span className="font-serif font-bold text-lg dark:text-white">Eternal Echoes & Visions</span>
                     </div>
                     <div className="text-sm text-text-secondary dark:text-gray-500">
-                        &copy; 2024 Nexus Inc. All rights reserved.
+                        &copy; 2024 Eternal Echoes & Visions Inc. All rights reserved.
                     </div>
                     <div className="flex gap-6">
                         <Github className="w-5 h-5 text-text-tertiary hover:text-text-primary dark:hover:text-white cursor-pointer" />
@@ -405,7 +413,9 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white p-4 font-sans">
                 <Card className="w-full max-w-md p-8 border border-border dark:border-white/10 shadow-xl">
                     <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-primary-600/30">N</div>
+                        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-4">
+                            <Sun className="w-6 h-6 fill-white text-white" />
+                        </div>
                         <h2 className="text-2xl font-bold text-text-primary dark:text-white">Welcome back</h2>
                         <p className="text-text-secondary dark:text-gray-400 mt-2">Enter your credentials to access your workspace.</p>
                     </div>
@@ -436,7 +446,9 @@ export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white p-4 font-sans">
                 <Card className="w-full max-w-md p-8 border border-border dark:border-white/10 shadow-xl">
                     <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-primary-600/30">N</div>
+                        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-4">
+                            <Sun className="w-6 h-6 fill-white text-white" />
+                        </div>
                         <h2 className="text-2xl font-bold text-text-primary dark:text-white">Create your account</h2>
                         <p className="text-text-secondary dark:text-gray-400 mt-2">Start your 14-day free trial.</p>
                     </div>
