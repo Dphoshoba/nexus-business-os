@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Notification } from '../../types';
 import { X, CheckCircle, AlertTriangle, Info, AlertCircle, Bell } from 'lucide-react';
@@ -23,7 +24,7 @@ export const useNotifications = () => {
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', title: 'Welcome', message: 'Welcome to Nexus Business OS!', type: 'info', timestamp: new Date(), read: false }
+    { id: '1', title: 'Welcome', message: 'Welcome to Echoes Business OS!', type: 'info', timestamp: new Date(), read: false }
   ]);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {

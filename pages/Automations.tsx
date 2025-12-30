@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     Play, Mail, Clock, Plus, Zap, CheckCircle, Split, 
     Bot, Globe, User, MessageSquare, LayoutList, Network,
-    ChevronDown, Edit2, Trash2, ArrowRight
+    ChevronDown, Edit2, Trash2, ArrowRight, FileText, Calendar,
+    Sparkles
 } from 'lucide-react';
 import { Button, SectionHeader, Modal, Input, Drawer } from '../components/ui/Primitives';
 import { useNotifications } from '../components/ui/NotificationSystem';
@@ -22,7 +23,7 @@ interface Connection {
 
 export const Automations: React.FC = () => {
   const { addNotification } = useNotifications();
-  const { teamMembers, addTask, deals, updateDeal } = useData();
+  const { teamMembers, addTask, deals, updateDeal, triggerIntegrationAction } = useData();
   
   // --- View State ---
   const [viewMode, setViewMode] = useState<'canvas' | 'list'>('canvas');
@@ -33,8 +34,8 @@ export const Automations: React.FC = () => {
       { id: '2', type: 'condition', title: 'Check Source', description: 'If source is "Website"', x: 500, y: 300, icon: Split, color: 'amber', config: {} },
       { id: '3', type: 'email', title: 'Send Welcome Email', description: 'Template: Onboarding V1', x: 900, y: 150, icon: Mail, color: 'blue', config: { template: 'Onboarding V1' } },
       { id: '4', type: 'ai', title: 'AI Score Lead', description: 'Analyze potential value', x: 900, y: 450, icon: Bot, color: 'violet', config: { prompt: 'Analyze lead quality based on title and company size.' } },
-      { id: '5', type: 'action', title: 'Create Task', description: 'Assign to Sales Rep', x: 1300, y: 300, icon: CheckCircle, color: 'blue', config: { actionType: 'create_task', assignee: 'Jane Doe' } },
-      { id: '6', type: 'action', title: 'Update Deal', description: 'Move to "Contacted"', x: 1300, y: 500, icon: ArrowRight, color: 'rose', config: { actionType: 'update_deal', newStage: DealStage.CONTACTED } },
+      { id: '5', type: 'action', title: 'Slack Team', description: 'Post to #sales-alerts', x: 1300, y: 300, icon: MessageSquare, color: 'rose', config: { actionType: 'send_slack', message: 'New high-quality lead detected!' } },
+      { id: '6', type: 'action', title: 'Sync to Notion', description: 'Create Deal Board entry', x: 1300, y: 500, icon: FileText, color: 'neutral', config: { actionType: 'create_notion_page' } },
   ]);
 
   const [connections, setConnections] = useState<Connection[]>([
@@ -47,7 +48,7 @@ export const Automations: React.FC = () => {
 
   // Viewport State
   const [scale, setScale] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [pan, setPan] = useState({ x: 50, y: 50 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -166,13 +167,11 @@ export const Automations: React.FC = () => {
 
       // Recursive Execution Function
       const traverse = async (nodeId: string) => {
-          // Highlight Node
           setActiveNode(nodeId);
           const node = nodes.find(n => n.id === nodeId);
           if (!node) return;
 
-          // EXECUTE LOGIC
-          await sleep(1000); // Thinking time
+          await sleep(1000); // Step "Thinking" time
 
           if (node.type === 'action') {
               if (node.config?.actionType === 'create_task') {
@@ -187,52 +186,53 @@ export const Automations: React.FC = () => {
                       dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0]
                   });
                   addNotification({ title: 'Task Created', message: `Assigned to ${node.config?.assignee}`, type: 'success' });
-              } else if (node.config?.actionType === 'update_deal' && node.config.newStage) {
-                  // Simulate updating the first deal for demo purposes
+              } 
+              else if (node.config?.actionType === 'send_slack') {
+                  await triggerIntegrationAction('slack', 'post_message', { message: node.config.message });
+                  addNotification({ title: 'Slack Notification', message: 'Update posted to team channel.', type: 'success' });
+              }
+              else if (node.config?.actionType === 'create_notion_page') {
+                  await triggerIntegrationAction('notion', 'create_page', { title: 'New Sales Opportunity' });
+                  addNotification({ title: 'Notion Sync', message: 'Page created in Sales Database.', type: 'success' });
+              }
+              else if (node.config?.actionType === 'update_deal' && node.config.newStage) {
                   const targetDeal = deals[0];
                   if (targetDeal) {
                       updateDeal({ ...targetDeal, stage: node.config.newStage, lastActivity: 'Just now via Automation' });
                       addNotification({ title: 'Deal Updated', message: `${targetDeal.title} moved to ${node.config.newStage}`, type: 'success' });
-                  } else {
-                      addNotification({ title: 'Warning', message: 'No active deals to update in simulation.', type: 'warning' });
                   }
               }
           } 
           else if (node.type === 'ai') {
-              addNotification({ title: 'AI Analysis', message: 'Processing lead score...', type: 'info' });
+              addNotification({ title: 'AI Analysis', message: 'Delegating intelligence task...', type: 'info' });
               await sleep(500);
-              addNotification({ title: 'AI Result', message: 'Lead Score: 92/100', type: 'success' });
+              addNotification({ title: 'AI Result', message: 'Lead Score: 94/100 (Hot)', type: 'success' });
           }
           else if (node.type === 'email') {
-              addNotification({ title: 'Email Sent', message: `Template: ${node.config?.template}`, type: 'success' });
+              addNotification({ title: 'Email Sent', message: `Campaign: ${node.config?.template}`, type: 'success' });
           }
 
-          // Find Outgoing Edges
           const outgoingEdges = connections.filter(c => c.source === nodeId);
-          
           if (outgoingEdges.length > 0) {
-              // BFS: Execute all branches
-              // For visual clarity in this linear-ish demo, we'll await them one by one
               for (const edge of outgoingEdges) {
                   setActiveEdge(edge.id);
-                  await sleep(600); // Travel time
+                  await sleep(600);
                   await traverse(edge.target);
               }
           }
       };
 
       await traverse(startNode.id);
-
       setIsSimulating(false);
       setActiveNode(null);
       setActiveEdge(null);
-      addNotification({ title: 'Workflow Complete', message: 'Automation finished successfully.', type: 'success' });
+      addNotification({ title: 'Workflow Complete', message: 'All steps executed successfully.', type: 'success' });
   };
 
   const handleAddNode = (e: React.FormEvent) => {
       e.preventDefault();
       const id = Date.now().toString();
-      const rightMostX = Math.max(...nodes.map(n => n.x));
+      const rightMostX = nodes.length > 0 ? Math.max(...nodes.map(n => n.x)) : 100;
       const rightMostY = nodes.find(n => n.x === rightMostX)?.y || 300;
 
       let icon = Zap;
@@ -282,34 +282,31 @@ export const Automations: React.FC = () => {
       }));
   };
 
-  // Helper to get selected node data
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
   return (
     <div className="h-full flex flex-col">
         <SectionHeader
             title="Automations"
-            subtitle="Visual workflow builder for business logic."
+            subtitle="Connect internal logic with third-party ecosystems."
             action={
                 <div className="flex gap-2">
                     <div className="flex bg-surface-muted dark:bg-surface-muted-dark p-1 rounded-lg border border-border dark:border-border-dark">
                         <button 
                             onClick={() => setViewMode('list')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-surface-dark shadow-sm text-primary-600' : 'text-text-secondary hover:text-text-primary'}`}
-                            title="List View"
                         >
                             <LayoutList className="w-4 h-4" />
                         </button>
                         <button 
                             onClick={() => setViewMode('canvas')}
                             className={`p-1.5 rounded-md transition-all ${viewMode === 'canvas' ? 'bg-white dark:bg-surface-dark shadow-sm text-primary-600' : 'text-text-secondary hover:text-text-primary'}`}
-                            title="Canvas View"
                         >
                             <Network className="w-4 h-4" />
                         </button>
                     </div>
                     <Button variant="secondary" icon={Play} size="sm" onClick={runSimulation} disabled={isSimulating}>
-                        {isSimulating ? 'Running...' : 'Test Workflow'}
+                        {isSimulating ? 'Simulating...' : 'Test Flow'}
                     </Button>
                     <Button icon={Plus} size="sm" onClick={() => setIsAddModalOpen(true)}>Add Step</Button>
                 </div>
@@ -354,7 +351,7 @@ export const Automations: React.FC = () => {
                                         stroke={isActive ? '#6366F1' : '#94A3B8'} 
                                         strokeWidth={isActive ? 4 : 2}
                                         fill="none"
-                                        className="transition-colors duration-300"
+                                        className="transition-all duration-300"
                                     />
                                     {isActive && (
                                         <circle r="4" fill="#6366F1">
@@ -408,13 +405,11 @@ export const Automations: React.FC = () => {
                 </div>
             </div>
         ) : (
-            /* --- List View for Mobile --- */
             <div className="flex-1 overflow-y-auto space-y-4 pb-10">
                 {nodes.sort((a,b) => a.x - b.x).map((node, index) => {
                     const NodeIcon = node.icon || Zap;
                     return (
                         <div key={node.id} className="relative pl-8">
-                            {/* Vertical Line */}
                             {index !== nodes.length - 1 && (
                                 <div className="absolute left-[15px] top-8 bottom-[-16px] w-0.5 bg-border dark:bg-border-dark"></div>
                             )}
@@ -442,124 +437,94 @@ export const Automations: React.FC = () => {
         )}
 
         {/* Configuration Drawer */}
-        <Drawer isOpen={!!selectedNodeId} onClose={() => setSelectedNodeId(null)} title="Configure Step">
+        <Drawer isOpen={!!selectedNodeId} onClose={() => setSelectedNodeId(null)} title="Step Config">
             {selectedNode && (
                 <div className="space-y-6">
                     <div>
-                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">Step Name</label>
+                        <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest mb-1.5 block">Step Name</label>
                         <Input 
                             value={selectedNode.title} 
                             onChange={(e) => setNodes(prev => prev.map(n => n.id === selectedNode.id ? { ...n, title: e.target.value } : n))}
                         />
                     </div>
-                    <div>
-                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">Description</label>
-                        <Input 
-                            value={selectedNode.description} 
-                            onChange={(e) => setNodes(prev => prev.map(n => n.id === selectedNode.id ? { ...n, description: e.target.value } : n))}
-                        />
-                    </div>
 
                     <div className="border-t border-border dark:border-border-dark pt-6">
-                        <h4 className="text-sm font-bold text-text-primary dark:text-text-primary-dark mb-4">Step Settings</h4>
+                        <h4 className="text-sm font-bold text-text-primary dark:text-text-primary-dark mb-4 flex items-center gap-2">
+                             Action Logic
+                        </h4>
                         
                         {selectedNode.type === 'action' && (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-medium text-text-secondary mb-1.5 block">Action Type</label>
+                                    <label className="text-xs font-medium text-text-secondary mb-1.5 block">Integration Type</label>
                                     <select 
                                         className="w-full h-[38px] px-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary-100 outline-none"
                                         value={selectedNode.config?.actionType || 'create_task'}
                                         onChange={(e) => updateNodeConfig(selectedNode.id, 'actionType', e.target.value)}
                                     >
-                                        <option value="create_task">Create Task</option>
-                                        <option value="update_deal">Update Deal Stage</option>
-                                        <option value="send_slack">Send Slack Message</option>
+                                        <option value="create_task">Echoes: Create Task</option>
+                                        <option value="send_slack">Slack: Post to Channel</option>
+                                        <option value="create_notion_page">Notion: Create Page</option>
+                                        <option value="sync_calendar">Google: Sync Calendar</option>
+                                        <option value="update_deal">Echoes: Update Deal Stage</option>
                                     </select>
                                 </div>
 
+                                {selectedNode.config?.actionType === 'send_slack' && (
+                                    <div>
+                                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">Slack Message</label>
+                                        <textarea 
+                                            className="w-full p-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm focus:ring-2 focus:ring-primary-100 outline-none h-24 resize-none"
+                                            value={selectedNode.config?.message || ''}
+                                            onChange={(e) => updateNodeConfig(selectedNode.id, 'message', e.target.value)}
+                                            placeholder="e.g. New lead captured: {{Lead.Name}}"
+                                        ></textarea>
+                                    </div>
+                                )}
+
                                 {selectedNode.config?.actionType === 'create_task' && (
                                     <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">Assign Task To</label>
+                                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">Assign To</label>
                                         <select 
                                             className="w-full h-[38px] px-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary-100 outline-none"
                                             value={selectedNode.config?.assignee || ''}
                                             onChange={(e) => updateNodeConfig(selectedNode.id, 'assignee', e.target.value)}
                                         >
-                                            <option value="">Select team member...</option>
+                                            <option value="">Choose owner...</option>
                                             {teamMembers.map(m => (
-                                                <option key={m.id} value={m.name}>{m.name} ({m.role})</option>
+                                                <option key={m.id} value={m.name}>{m.name}</option>
                                             ))}
                                         </select>
                                     </div>
                                 )}
-
-                                {selectedNode.config?.actionType === 'update_deal' && (
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1.5 block">New Stage</label>
-                                        <select 
-                                            className="w-full h-[38px] px-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary-100 outline-none"
-                                            value={selectedNode.config?.newStage || ''}
-                                            onChange={(e) => updateNodeConfig(selectedNode.id, 'newStage', e.target.value)}
-                                        >
-                                            <option value="">Select stage...</option>
-                                            {Object.values(DealStage).map(s => (
-                                                <option key={s} value={s}>{s}</option>
-                                            ))}
-                                        </select>
-                                        <p className="text-xs text-text-tertiary mt-2">
-                                            Simulation will target the first active deal in your pipeline.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {selectedNode.type === 'email' && (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-xs font-medium text-text-secondary mb-1.5 block">Email Template</label>
-                                    <select 
-                                        className="w-full h-[38px] px-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary-100 outline-none"
-                                        value={selectedNode.config?.template || ''}
-                                        onChange={(e) => updateNodeConfig(selectedNode.id, 'template', e.target.value)}
-                                    >
-                                        <option value="">Select a template...</option>
-                                        <option value="Onboarding V1">Onboarding V1</option>
-                                        <option value="Welcome Series">Welcome Series</option>
-                                        <option value="Re-engagement">Re-engagement</option>
-                                    </select>
-                                </div>
                             </div>
                         )}
 
                         {selectedNode.type === 'ai' && (
                             <div className="space-y-4">
+                                <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-100 dark:border-violet-900/30 flex items-center gap-2 mb-2">
+                                    <Sparkles className="w-4 h-4 text-violet-500" />
+                                    <span className="text-xs font-medium text-violet-700">Gemini 3.0 Engine Active</span>
+                                </div>
                                 <div>
-                                    <label className="text-xs font-medium text-text-secondary mb-1.5 block">AI Prompt</label>
+                                    <label className="text-xs font-medium text-text-secondary mb-1.5 block">Analysis Prompt</label>
                                     <textarea 
-                                        className="w-full p-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm focus:ring-2 focus:ring-primary-100 outline-none h-24 resize-none"
+                                        className="w-full p-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm focus:ring-2 focus:ring-primary-100 outline-none h-32 resize-none"
                                         value={selectedNode.config?.prompt || ''}
                                         onChange={(e) => updateNodeConfig(selectedNode.id, 'prompt', e.target.value)}
-                                        placeholder="Describe what the AI should analyze..."
+                                        placeholder="Determine the sentiment of the last email..."
                                     ></textarea>
                                 </div>
                             </div>
                         )}
-
-                        {(selectedNode.type === 'trigger' || selectedNode.type === 'condition' || selectedNode.type === 'delay' || selectedNode.type === 'webhook') && (
-                            <div className="p-4 bg-surface-subtle dark:bg-surface-subtle-dark rounded-lg border border-dashed border-border dark:border-border-dark text-center text-xs text-text-tertiary">
-                                No additional configuration needed for this step type in this demo.
-                            </div>
-                        )}
                     </div>
 
-                    <div className="pt-6 flex justify-between items-center">
+                    <div className="pt-6 flex justify-between items-center border-t border-border dark:border-border-dark">
                         <Button variant="danger" size="sm" icon={Trash2} onClick={() => {
                             setNodes(prev => prev.filter(n => n.id !== selectedNode.id));
                             setConnections(prev => prev.filter(c => c.source !== selectedNode.id && c.target !== selectedNode.id));
                             setSelectedNodeId(null);
-                        }}>Delete Step</Button>
+                        }}>Remove Step</Button>
                         <Button onClick={() => setSelectedNodeId(null)}>Done</Button>
                     </div>
                 </div>
@@ -567,44 +532,35 @@ export const Automations: React.FC = () => {
         </Drawer>
 
         {/* Add Node Modal */}
-        <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add Workflow Step">
+        <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="New Automation Step">
             <form onSubmit={handleAddNode} className="space-y-4">
                 <div className="space-y-1.5">
                     <label className="text-xs font-medium text-text-secondary">Step Title</label>
                     <Input 
-                        placeholder="e.g. Send Slack Notification" 
+                        placeholder="e.g. Notify Engineering" 
                         value={newNodeData.title}
                         onChange={(e) => setNewNodeData({...newNodeData, title: e.target.value})}
                         required
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-secondary">Description</label>
-                    <Input 
-                        placeholder="Brief detail of action" 
-                        value={newNodeData.description}
-                        onChange={(e) => setNewNodeData({...newNodeData, description: e.target.value})}
-                    />
-                </div>
-                <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-secondary">Type</label>
+                    <label className="text-xs font-medium text-text-secondary">Category</label>
                     <select 
                         className="w-full h-[38px] px-3 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary-100 outline-none"
                         value={newNodeData.type}
                         onChange={(e) => setNewNodeData({...newNodeData, type: e.target.value as any})}
                     >
-                        <option value="action">Action</option>
-                        <option value="trigger">Trigger</option>
-                        <option value="condition">Condition</option>
-                        <option value="delay">Delay</option>
-                        <option value="ai">AI Processing</option>
-                        <option value="email">Send Email</option>
-                        <option value="webhook">Webhook</option>
+                        <option value="action">Action / Integration</option>
+                        <option value="trigger">Event Trigger</option>
+                        <option value="condition">Logical Split</option>
+                        <option value="delay">Time Delay</option>
+                        <option value="ai">AI Analysis</option>
+                        <option value="webhook">Outbound Webhook</option>
                     </select>
                 </div>
                 <div className="pt-4 flex justify-end gap-3">
                     <Button type="button" variant="ghost" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-                    <Button type="submit">Add to Canvas</Button>
+                    <Button type="submit">Place on Canvas</Button>
                 </div>
             </form>
         </Modal>

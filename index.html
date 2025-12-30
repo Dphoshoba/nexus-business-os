@@ -4,12 +4,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexus Business OS</title>
+    <title>Echoes & Visions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -19,15 +19,16 @@
           extend: {
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
             },
             colors: {
               surface: {
                 DEFAULT: '#FFFFFF',
-                dark: '#1F2937', // gray-800
+                dark: '#1F2937', 
                 subtle: '#F9FAFB', 
-                'subtle-dark': '#111827', // gray-900
+                'subtle-dark': '#111827', 
                 muted: '#F3F4F6',
-                'muted-dark': '#374151', // gray-700
+                'muted-dark': '#374151',
               },
               border: {
                 DEFAULT: '#E5E7EB',
@@ -41,7 +42,6 @@
                 tertiary: '#9CA3AF',
                 'tertiary-dark': '#9CA3AF',
               },
-              // Dynamic Primary Palette using CSS Variables
               primary: {
                 50: 'rgb(var(--primary-50) / <alpha-value>)',
                 100: 'rgb(var(--primary-100) / <alpha-value>)',
@@ -67,7 +67,6 @@
       body {
         font-family: 'Inter', sans-serif;
       }
-      /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -83,7 +82,6 @@
         background: #374151;
       }
       
-      /* Default Theme Variables (Violet) - Will be overridden by DataContext */
       :root {
         --primary-50: 245 243 255;
         --primary-100: 237 233 254;

@@ -1,4 +1,65 @@
 
+import React from 'react';
+
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+export interface DeliverableItem {
+  id: number;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+export interface StepItem {
+  number: string;
+  title: string;
+  description: string;
+}
+
+export interface CaseStudy {
+    id: string;
+    title: string;
+    client: string;
+    category: 'AI' | 'Automation' | 'Strategy' | 'Design';
+    impact: string;
+    description: string;
+    challenge: string;
+    solution: string;
+    result: string;
+    image: string;
+    tags: string[];
+}
+
+export interface BlogPost {
+    id: string;
+    title: string;
+    slug: string;
+    summary: string;
+    content: string;
+    category: 'Intelligence' | 'Operations' | 'Growth' | 'Culture';
+    author: {
+        name: string;
+        role: string;
+        avatar: string;
+    };
+    date: string;
+    image: string;
+    readingTime: string;
+    isFeatured?: boolean;
+    tags: string[];
+}
+
+export interface ForecastPoint {
+    name: string;
+    actual?: number;
+    predicted?: number;
+    confidenceHigh?: number;
+    confidenceLow?: number;
+}
+
 export enum DealStage {
   LEAD = 'Lead',
   CONTACTED = 'Contacted',
@@ -7,11 +68,23 @@ export enum DealStage {
   CLOSED = 'Closed',
 }
 
+export type IntegrationStatus = 'connected' | 'disconnected' | 'error';
+
+export interface Integration {
+  id: string;
+  name: string;
+  status: IntegrationStatus;
+  apiKey?: string;
+  webhookUrl?: string;
+  lastSync?: string;
+  settings?: Record<string, any>;
+}
+
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'rose' | 'amber' | 'cyan';
 export type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ar' | 'pt' | 'hi' | 'ru' | 'it' | 'ko' | 'tr' | 'nl' | 'pl' | 'id' | 'vi' | 'th' | 'sv' | 'el';
 export type SubscriptionPlan = 'Starter' | 'Pro' | 'Business';
 
-export type AppModule = 'crm' | 'bookings' | 'automations' | 'payments' | 'funnels' | 'documents' | 'projects' | 'analytics' | 'inbox' | 'storage' | 'marketplace' | 'strategy' | 'social' | 'team' | 'canvas' | 'campaigns' | 'scan' | 'assistant';
+export type AppModule = 'crm' | 'bookings' | 'automations' | 'payments' | 'funnels' | 'documents' | 'projects' | 'analytics' | 'inbox' | 'storage' | 'marketplace' | 'strategy' | 'social' | 'team' | 'canvas' | 'campaigns' | 'scan' | 'assistant' | 'blog_admin' | 'market_intel';
 
 export type EmailProvider = 'smtp' | 'sendgrid';
 
@@ -61,6 +134,15 @@ export interface Invoice {
   amount: number;
   status: 'Paid' | 'Pending' | 'Overdue';
   date: string;
+}
+
+export interface Expense {
+  id: string;
+  vendor: string;
+  category: 'Marketing' | 'Payroll' | 'SaaS' | 'Office' | 'Travel' | 'Other';
+  amount: number;
+  date: string;
+  status: 'Paid' | 'Pending';
 }
 
 export interface Product {
@@ -197,6 +279,14 @@ export interface UserProfile {
   aiCredits: number;
 }
 
+export interface ClientProfile {
+  id: string;
+  name: string;
+  company: string;
+  email: string;
+  avatar: string;
+}
+
 export interface AutomationNode {
   id: string;
   type: 'trigger' | 'action' | 'condition' | 'delay' | 'ai' | 'email' | 'webhook';
@@ -212,7 +302,7 @@ export interface AutomationNode {
       prompt?: string;
       url?: string;
       duration?: number;
-      actionType?: 'create_task' | 'update_deal' | 'send_slack';
+      actionType?: 'create_task' | 'update_deal' | 'send_slack' | 'create_notion_page' | 'sync_calendar';
       dealId?: string;
       newStage?: DealStage;
       message?: string;
@@ -298,4 +388,4 @@ export interface Campaign {
     content?: string; // HTML content
 }
 
-export type View = 'dashboard' | 'crm' | 'bookings' | 'automations' | 'payments' | 'funnels' | 'documents' | 'projects' | 'analytics' | 'inbox' | 'storage' | 'marketplace' | 'strategy' | 'social' | 'team' | 'canvas' | 'campaigns' | 'scan' | 'settings' | 'help' | 'assistant';
+export type View = 'dashboard' | 'crm' | 'bookings' | 'automations' | 'payments' | 'funnels' | 'documents' | 'projects' | 'analytics' | 'inbox' | 'storage' | 'marketplace' | 'strategy' | 'social' | 'team' | 'canvas' | 'campaigns' | 'scan' | 'settings' | 'help' | 'assistant' | 'client_portal' | 'blog_admin' | 'audit_landing' | 'market_intel';

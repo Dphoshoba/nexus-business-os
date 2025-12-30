@@ -1,482 +1,318 @@
-import React, { useState } from 'react';
-import { Button, Input, Card } from '../components/ui/Primitives';
-import { Mail, Lock, ArrowRight, Github, Check, ChevronRight, LayoutDashboard, Users, CreditCard, Bot, Globe, Shield, Zap, Menu, X, TrendingUp, Briefcase, Server, CheckCircle2, Search, Bell, MoreHorizontal, Sun } from 'lucide-react';
 
-export const Auth: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
-    const [view, setView] = useState<'landing' | 'login' | 'signup'>('landing');
+import React, { useState } from 'react';
+import { Button, Input, Card, Badge } from '../components/ui/Primitives';
+import { 
+  Mail, Lock, ArrowRight, Check, ChevronRight, Bot, Globe, 
+  Shield, Zap, Menu, X, TrendingUp, Briefcase, Sun, 
+  HelpCircle, Rocket, Layers, MessageSquare, Phone, MapPin,
+  ExternalLink, BarChart3, Filter, Target, Sparkles, User, Users,
+  BookOpen, Clock, Share2, Facebook, Twitter, Linkedin, Bookmark,
+  Calendar, ChevronLeft
+} from 'lucide-react';
+import { FAQItem, DeliverableItem, StepItem, CaseStudy, BlogPost, View } from '../types';
+import { AuditLanding } from './AuditLanding';
+
+type PublicView = 'landing' | 'login' | 'signup' | 'deliverables' | 'process' | 'faq' | 'contact' | 'portfolio' | 'blog' | 'blog-post' | 'audit_landing';
+
+export const Auth: React.FC<{ onLogin: (role: 'team' | 'client') => void }> = ({ onLogin }) => {
+    const [view, setView] = useState<PublicView>('landing');
+    const [loginRole, setLoginRole] = useState<'team' | 'client'>('team');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [selectedCase, setSelectedCase] = useState<CaseStudy | null>(null);
+    const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+    const [portfolioFilter, setPortfolioFilter] = useState<string>('All');
+    const [newsletterEmail, setNewsletterEmail] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock authentication
-        onLogin();
+        onLogin(loginRole);
     };
 
-    const scrollToSection = (id: string) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
+    const navigate = (newView: PublicView, post?: BlogPost) => {
+        if (post) setSelectedPost(post);
+        setView(newView);
         setMobileMenuOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // --- Mock Blog Data ---
+    const blogPosts: BlogPost[] = [
+        {
+            id: '1',
+            title: 'The Silent Revolution: AI in Business Operations',
+            slug: 'ai-business-operations',
+            summary: 'How delegated intelligence is reshaping the way small teams outperform large corporations.',
+            content: `
+                <p>The landscape of business operations is undergoing a profound transformation. While the media focuses on generative AI for art and chat, a silent revolution is happening within the structural logic of companies.</p>
+                <h3>Efficiency Beyond Automation</h3>
+                <p>Automation used to mean simple 'if-this-then-that' rules. Today, AI allows for nuanced decision-making. Imagine a system that doesn't just send a reminder for an unpaid invoice, but analyzes the client's payment history and drafts a personalized follow-up that maximizes the chance of immediate payment while maintaining the relationship.</p>
+                <blockquote>"The goal of AI in business isn't to replace the human, but to provide them with a digital exoskeleton."</blockquote>
+                <h3>The Echoes OS Approach</h3>
+                <p>At Echoes & Visions, we build architectures where AI acts as a connective tissue between disparate modules. Your CRM shouldn't just store data; it should predict the needs of your next lead before you even open the dashboard.</p>
+            `,
+            category: 'Intelligence',
+            author: { name: 'Elias Thorne', role: 'Chief Strategist', avatar: 'ET' },
+            date: 'Nov 12, 2024',
+            image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop',
+            readingTime: '6 min',
+            isFeatured: true,
+            tags: ['AI', 'Future of Work', 'Efficiency']
+        }
+    ];
+
+    const caseStudies: CaseStudy[] = [
+        {
+            id: '1',
+            title: 'AI Revenue Engine',
+            client: 'TechFlow Systems',
+            category: 'AI',
+            impact: '240% Growth',
+            description: 'Automating sales outreach and lead scoring using Echoes Intelligence.',
+            challenge: 'TechFlow was struggling with manual lead qualification, resulting in a 45% drop-off in their sales funnel.',
+            solution: 'We deployed a custom Echoes AI agent that integrated with their existing CRM to score leads in real-time and draft personalized initial responses.',
+            result: 'Leads processed increased by 400%, while sales cycle time decreased from 14 days to 4 days.',
+            image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+            tags: ['Machine Learning', 'Salesforce', 'Automation']
+        }
+    ];
+
+    const NewsletterSignup = () => (
+        <section className="py-20 bg-primary-900 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-12 opacity-10">
+                <Mail className="w-64 h-64 text-white" />
+            </div>
+            <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 font-serif">Stay ahead of the curve.</h2>
+                <p className="text-xl text-primary-100 mb-10">Join 15,000+ founders receiving our weekly insights on AI, design, and strategic operations.</p>
+                <form className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto" onSubmit={(e) => { e.preventDefault(); alert("Subscribed!"); setNewsletterEmail(''); }}>
+                    <input 
+                        type="email" 
+                        required
+                        placeholder="your@email.com" 
+                        className="flex-1 px-6 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 backdrop-blur-md"
+                        value={newsletterEmail}
+                        onChange={(e) => setNewsletterEmail(e.target.value)}
+                    />
+                    <button type="submit" className="px-8 py-4 bg-white text-primary-900 font-bold rounded-full hover:bg-primary-50 transition-colors shadow-xl">Subscribe</button>
+                </form>
+                <p className="text-primary-400 text-xs mt-4">Zero spam. Only signal. Unsubscribe anytime.</p>
+            </div>
+        </section>
+    );
+
+    const BlogPage = () => (
+        <div className="min-h-screen pt-32 pb-20 bg-surface dark:bg-[#0B1120]">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
+                    <div className="max-w-2xl">
+                        <Badge variant="brand" className="mb-4">The Echoes Journal</Badge>
+                        <h1 className="text-4xl md:text-6xl font-bold font-serif dark:text-white leading-tight">Insight into the future of business.</h1>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    {blogPosts.map(post => (
+                        <article 
+                            key={post.id} 
+                            className="group cursor-pointer flex flex-col"
+                            onClick={() => navigate('blog-post', post)}
+                        >
+                            <div className="aspect-[16/10] rounded-2xl overflow-hidden mb-6 relative">
+                                <img src={post.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={post.title} />
+                                <div className="absolute top-4 left-4">
+                                    <Badge className="bg-white/90 dark:bg-black/60 backdrop-blur-md border-none text-primary-700 dark:text-primary-400">{post.category}</Badge>
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold dark:text-white mb-4 group-hover:text-primary-600 transition-colors leading-snug">{post.title}</h3>
+                                <p className="text-text-secondary dark:text-gray-400 line-clamp-3 leading-relaxed mb-6">{post.summary}</p>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+
+    const BlogPostPage = () => {
+        if (!selectedPost) return <BlogPage />;
+        return (
+            <div className="min-h-screen pt-32 pb-20 bg-surface dark:bg-[#0B1120]">
+                <div className="max-w-4xl mx-auto px-6">
+                    <button type="button" onClick={() => setView('blog')} className="flex items-center gap-2 text-sm font-bold text-text-tertiary hover:text-primary-600 transition-colors mb-12 uppercase tracking-widest">
+                        <ChevronLeft className="w-4 h-4" /> Back to Journal
+                    </button>
+                    <h1 className="text-4xl md:text-6xl font-bold font-serif dark:text-white leading-tight mb-8">{selectedPost.title}</h1>
+                    <div className="aspect-[21/9] rounded-3xl overflow-hidden mb-12 shadow-2xl">
+                        <img src={selectedPost.image} className="w-full h-full object-cover" alt="Hero" />
+                    </div>
+                    <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+                </div>
+            </div>
+        );
+    };
+
+    const PublicNav = () => (
+        <nav className="fixed top-0 w-full z-50 bg-surface/80 dark:bg-[#0B1120]/80 backdrop-blur-md border-b border-border/50 dark:border-white/10">
+            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('landing')}>
+                    <div className="w-9 h-9 bg-gray-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-black shadow-lg">
+                        <Sun className="w-5 h-5 fill-current" />
+                    </div>
+                    <span className="font-serif font-bold text-xl tracking-wide text-text-primary dark:text-white uppercase">Echoes & Visions</span>
+                </div>
+
+                <div className="hidden md:flex items-center gap-8 text-[10px] font-bold uppercase tracking-widest text-text-secondary dark:text-gray-400">
+                    <button type="button" onClick={() => navigate('blog')} className={`transition-colors ${view === 'blog' ? 'text-primary-600' : 'hover:text-primary-600'}`}>Journal</button>
+                    <button type="button" onClick={() => navigate('portfolio')} className={`transition-colors ${view === 'portfolio' ? 'text-primary-600' : 'hover:text-primary-600'}`}>Portfolio</button>
+                    <button type="button" onClick={() => navigate('audit_landing')} className={`transition-colors ${view === 'audit_landing' ? 'text-primary-600 font-bold' : 'hover:text-primary-600'}`}>Audit</button>
+                    <button type="button" onClick={() => onLogin('team')} className="text-primary-600 font-bold border-b-2 border-primary-100 hover:border-primary-500 transition-all">Portal</button>
+                </div>
+
+                <div className="hidden md:flex items-center gap-4">
+                    <button type="button" onClick={() => { setLoginRole('team'); setView('login'); }} className="text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-primary-600 transition-colors">Sign In</button>
+                    <button type="button" onClick={() => navigate('audit_landing')} className="bg-[#111827] dark:bg-white text-white dark:text-black px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg hover:scale-105">Get Audit</button>
+                </div>
+
+                <button type="button" className="md:hidden text-text-secondary dark:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                    {mobileMenuOpen ? <X /> : <Menu />}
+                </button>
+            </div>
+        </nav>
+    );
+
+    const PublicFooter = () => (
+        <footer className="bg-surface dark:bg-[#0B1120] border-t border-border dark:border-white/10 py-12 px-6">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gray-900 dark:bg-white rounded flex items-center justify-center text-white dark:text-black">
+                        <Sun className="w-3.5 h-3.5 fill-current" />
+                    </div>
+                    <span className="font-serif font-bold text-lg dark:text-white uppercase">Echoes & Visions</span>
+                </div>
+                <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <button type="button" onClick={() => navigate('audit_landing')} className="hover:text-primary-600">Audit</button>
+                    <button type="button" onClick={() => navigate('blog')} className="hover:text-primary-600">Journal</button>
+                    <button type="button" onClick={() => navigate('faq')} className="hover:text-primary-600">FAQ</button>
+                </div>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">&copy; 2024 Echoes & Visions Inc.</p>
+            </div>
+        </footer>
+    );
+
+    const renderPublicView = () => {
+        switch(view) {
+            case 'landing': return <><LandingPage /><NewsletterSignup /></>;
+            case 'audit_landing': return <AuditLanding onBack={() => setView('landing')} />;
+            case 'blog': return <BlogPage />;
+            case 'blog-post': return <BlogPostPage />;
+            case 'login': return (
+                <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] p-4">
+                  <Card className="w-full max-w-md p-8 shadow-xl">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="text-center mb-8">
+                        <Sun className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold font-serif">{loginRole === 'team' ? 'Team Login' : 'Client Portal Login'}</h2>
+                      </div>
+                      <div className="flex bg-surface-muted dark:bg-white/5 p-1 rounded-lg mb-4">
+                        <button type="button" onClick={() => setLoginRole('team')} className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${loginRole === 'team' ? 'bg-white dark:bg-surface-dark shadow-sm text-primary-600' : 'text-text-tertiary'}`}>Team</button>
+                        <button type="button" onClick={() => setLoginRole('client')} className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${loginRole === 'client' ? 'bg-white dark:bg-surface-dark shadow-sm text-primary-600' : 'text-text-tertiary'}`}>Client</button>
+                      </div>
+                      <Input icon={Mail} type="email" placeholder="Email" required />
+                      <Input icon={Lock} type="password" placeholder="Password" required />
+                      <Button className="w-full" type="submit">Sign In</Button>
+                    </form>
+                  </Card>
+                </div>
+            );
+            case 'signup': return (
+                <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] p-4"><Card className="w-full max-w-md p-8 shadow-xl"><form onSubmit={handleSubmit} className="space-y-4"><div className="text-center mb-8"><Sun className="w-12 h-12 text-orange-500 mx-auto mb-4" /><h2 className="text-2xl font-bold font-serif">Create account</h2></div><Input placeholder="Full Name" required /><Input icon={Mail} type="email" placeholder="Email" required /><Input icon={Lock} type="password" placeholder="Password" required /><Button className="w-full" type="submit">Get Started</Button></form></Card></div>
+            );
+            default: return <LandingPage />;
+        }
     };
 
     const LandingPage = () => (
         <div className="min-h-screen bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white selection:bg-primary-500 selection:text-white overflow-x-hidden font-sans">
-            {/* Navigation */}
-            <nav className="fixed top-0 w-full z-50 bg-surface/80 dark:bg-[#0B1120]/80 backdrop-blur-md border-b border-border/50 dark:border-white/10">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setView('landing'); }}>
-                        <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
-                            <Sun className="w-5 h-5 fill-white text-white" />
-                        </div>
-                        <span className="font-serif font-bold text-xl tracking-wide text-text-primary dark:text-white">Eternal Echoes & Visions</span>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-secondary dark:text-gray-400">
-                        <button onClick={() => scrollToSection('features')} className="hover:text-primary-600 dark:hover:text-white transition-colors">Features</button>
-                        <button onClick={() => scrollToSection('solutions')} className="hover:text-primary-600 dark:hover:text-white transition-colors">Solutions</button>
-                        <button onClick={() => scrollToSection('pricing')} className="hover:text-primary-600 dark:hover:text-white transition-colors">Pricing</button>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-4">
-                        <button onClick={() => setView('login')} className="text-sm font-medium hover:text-primary-600 dark:hover:text-white transition-colors">Sign In</button>
-                        <button onClick={() => setView('signup')} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40">Get Started</button>
-                    </div>
-
-                    <button className="md:hidden text-text-secondary dark:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X /> : <Menu />}
-                    </button>
-                </div>
-                
-                {mobileMenuOpen && (
-                    <div className="md:hidden absolute top-20 left-0 w-full bg-surface dark:bg-[#0B1120] border-b border-border dark:border-white/10 p-6 flex flex-col gap-4 shadow-2xl animate-in slide-in-from-top-5">
-                        <button onClick={() => scrollToSection('features')} className="text-lg font-medium text-left">Features</button>
-                        <button onClick={() => scrollToSection('solutions')} className="text-lg font-medium text-left">Solutions</button>
-                        <button onClick={() => scrollToSection('pricing')} className="text-lg font-medium text-left">Pricing</button>
-                        <hr className="border-border dark:border-white/10" />
-                        <button onClick={() => setView('login')} className="text-lg font-medium text-left">Sign In</button>
-                        <button onClick={() => setView('signup')} className="bg-primary-600 text-white py-3 rounded-xl font-bold">Get Started</button>
-                    </div>
-                )}
-            </nav>
-
-            {/* Hero Section */}
-            <header className="pt-32 pb-20 px-6 relative">
+            <header className="pt-48 pb-32 px-6 relative">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-primary-500/10 to-transparent blur-3xl -z-10 pointer-events-none"></div>
-                
                 <div className="max-w-5xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-white/10 text-primary-700 dark:text-primary-300 text-xs font-semibold mb-6 border border-primary-100 dark:border-white/10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-white/5 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-8 border border-emerald-100 dark:border-emerald-900/30">
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                        New: Gemini Live Voice Assistant
+                        Limited: 3 Audit Slots Remaining for Q4
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-                        The Operating System <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400">for Modern Business</span>
+                    <h1 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 leading-[0.9] font-serif">
+                        Clarity is the <br />
+                        <span className="italic text-[#10B981]">Ultimate Advantage</span>
                     </h1>
-                    <p className="text-xl text-text-secondary dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                        Nexus unifies your CRM, Project Management, Finance, and AI Automation into one seamless platform. Stop switching apps. Start growing.
+                    <p className="text-xl md:text-2xl text-text-secondary dark:text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed">
+                        Stop drowning in data. Echoes & Visions unifies your strategy, operations, and AI automation into a single, high-performance ecosystem.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button onClick={() => setView('signup')} className="w-full sm:w-auto h-12 px-8 bg-primary-600 hover:bg-primary-700 text-white rounded-full font-semibold transition-all shadow-xl shadow-primary-600/20 hover:scale-105 flex items-center justify-center gap-2">
-                            Start Free Trial <ArrowRight className="w-4 h-4" />
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <button type="button" onClick={() => navigate('audit_landing')} className="w-full sm:w-auto h-16 px-12 bg-[#111827] dark:bg-white text-white dark:text-black rounded-full font-bold transition-all shadow-2xl hover:scale-105 flex items-center justify-center gap-3">
+                            Apply for a Strategic Audit <ArrowRight className="w-5 h-5" />
                         </button>
-                        <button onClick={() => scrollToSection('features')} className="w-full sm:w-auto h-12 px-8 bg-white dark:bg-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-text-primary dark:text-white border border-border dark:border-white/10 rounded-full font-semibold transition-all flex items-center justify-center gap-2">
-                            <Bot className="w-4 h-4" /> View Features
+                        <button type="button" onClick={() => navigate('blog')} className="w-full sm:w-auto h-16 px-12 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 text-text-primary dark:text-white border border-border dark:border-white/10 rounded-full font-bold transition-all flex items-center justify-center gap-2">
+                            Explore the Journal
                         </button>
-                    </div>
-                </div>
-
-                {/* Hero Image / Mockup */}
-                <div className="mt-20 max-w-6xl mx-auto relative group perspective-1000">
-                    <div className="absolute inset-0 bg-gradient-to-t from-surface dark:from-[#0B1120] to-transparent z-10 h-32 bottom-0"></div>
-                    <div className="relative rounded-2xl border border-slate-300 dark:border-white/20 shadow-2xl overflow-hidden bg-white dark:bg-[#111827] transform transition-transform duration-700 hover:rotate-x-2 group-hover:scale-[1.01]">
-                        {/* Window Header */}
-                        <div className="h-10 bg-slate-100 dark:bg-[#1F2937] border-b border-slate-200 dark:border-white/10 flex items-center px-4 gap-2">
-                            <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
-                                <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500/20"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
-                            </div>
-                            <div className="ml-4 px-3 py-1 bg-white dark:bg-[#111827] rounded text-[10px] text-text-tertiary flex-1 max-w-sm border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm">
-                                <span className="opacity-50 font-medium">nexus.os/dashboard</span>
-                            </div>
-                        </div>
-                        
-                        {/* Dashboard Preview Mockup */}
-                        <div className="flex h-[600px] bg-slate-50 dark:bg-[#0B1120]">
-                            {/* Sidebar Mockup */}
-                            <div className="w-64 bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-white/10 p-4 hidden md:flex flex-col gap-4">
-                                {/* Brand */}
-                                <div className="flex items-center gap-3 px-2 mb-2">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg shadow-md flex items-center justify-center">
-                                        <Sun className="w-5 h-5 text-white fill-white" />
-                                    </div>
-                                    <div className="h-4 w-32 bg-slate-400 dark:bg-white/20 rounded-md"></div>
-                                </div>
-                                {/* Nav Items */}
-                                <div className="space-y-1">
-                                    {[1, 2, 3, 4, 5, 6].map(i => (
-                                        <div key={i} className={`h-10 w-full rounded-lg flex items-center px-3 gap-3 ${i === 1 ? 'bg-primary-50 border border-primary-200 dark:bg-primary-900/20 dark:border-primary-800' : 'bg-white border border-transparent dark:bg-white/5'}`}>
-                                            <div className={`w-5 h-5 rounded ${i === 1 ? 'bg-primary-600 dark:bg-primary-500' : 'bg-slate-300 dark:bg-white/20'}`}></div>
-                                            <div className={`h-2.5 rounded flex-1 ${i === 1 ? 'bg-primary-400 dark:bg-primary-700 w-20' : 'bg-slate-200 dark:bg-white/10 w-16'}`}></div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {/* User Profile */}
-                                <div className="mt-auto border-t border-slate-200 dark:border-white/10 pt-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-slate-300 dark:bg-white/20"></div>
-                                        <div className="space-y-2">
-                                            <div className="h-2.5 w-24 bg-slate-400 dark:bg-white/20 rounded"></div>
-                                            <div className="h-2 w-16 bg-slate-300 dark:bg-white/10 rounded"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Main Content Mockup */}
-                            <div className="flex-1 p-8 overflow-hidden flex flex-col gap-8 bg-slate-50 dark:bg-[#0B1120]">
-                                {/* Top Bar */}
-                                <div className="flex justify-between items-end">
-                                    <div className="space-y-3">
-                                        <div className="h-8 w-48 bg-slate-300 dark:bg-white/20 rounded-lg"></div>
-                                        <div className="h-4 w-64 bg-slate-200 dark:bg-white/10 rounded-md"></div>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <div className="h-10 w-10 bg-white dark:bg-[#1F2937] rounded-lg border border-slate-200 dark:border-white/10 shadow-sm"></div>
-                                        <div className="h-10 w-32 bg-primary-600 rounded-lg shadow-lg shadow-primary-600/20"></div>
-                                    </div>
-                                </div>
-
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-4 gap-6">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className="bg-white dark:bg-[#1F2937] p-5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col gap-3">
-                                            <div className="flex justify-between items-start">
-                                                <div className={`w-10 h-10 rounded-lg ${i===1?'bg-blue-100':i===2?'bg-purple-100':i===3?'bg-emerald-100':'bg-amber-100'}`}></div>
-                                                <div className="h-4 w-12 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-100"></div>
-                                            </div>
-                                            <div className="h-6 w-20 bg-slate-700/80 dark:bg-white/40 rounded-md mt-1"></div>
-                                            <div className="h-3 w-16 bg-slate-300 dark:bg-white/20 rounded-md"></div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Charts Area */}
-                                <div className="flex gap-6 h-full min-h-[300px]">
-                                    {/* Main Chart */}
-                                    <div className="flex-[2] bg-white dark:bg-[#1F2937] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm p-6 flex flex-col">
-                                        <div className="flex justify-between mb-8">
-                                            <div className="h-5 w-32 bg-slate-300 dark:bg-white/20 rounded-md"></div>
-                                            <div className="h-5 w-24 bg-slate-200 dark:bg-white/10 rounded-md"></div>
-                                        </div>
-                                        <div className="flex-1 flex items-end justify-between gap-4 px-2 pb-2">
-                                            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 50, 95].map((h, idx) => (
-                                                <div key={idx} className="w-full bg-primary-100 dark:bg-primary-900/10 rounded-t-sm relative group overflow-hidden h-full">
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-primary-500 rounded-t-sm transition-all duration-1000" style={{ height: `${h}%` }}></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Side List */}
-                                    <div className="flex-1 bg-white dark:bg-[#1F2937] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm p-6 flex flex-col gap-5">
-                                        <div className="h-5 w-32 bg-slate-300 dark:bg-white/20 rounded-md mb-2"></div>
-                                        {[1, 2, 3, 4].map(i => (
-                                            <div key={i} className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10"></div>
-                                                <div className="flex-1 space-y-2">
-                                                    <div className="h-2.5 w-full bg-slate-300 dark:bg-white/10 rounded-full"></div>
-                                                    <div className="h-2 w-2/3 bg-slate-200 dark:bg-white/5 rounded-full"></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Overlay CTA */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 dark:bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            <button onClick={() => setView('signup')} className="px-8 py-3 bg-primary-600 text-white rounded-full font-bold shadow-2xl transform scale-110 hover:scale-115 transition-transform hover:shadow-primary-600/30">Enter Dashboard</button>
-                        </div>
                     </div>
                 </div>
             </header>
 
-            {/* Features Grid */}
-            <section id="features" className="py-24 bg-surface-subtle dark:bg-[#0F1629]">
+            {/* Featured Blog Preview */}
+            <section className="py-24 bg-surface dark:bg-[#0B1120] border-t border-border dark:border-white/5">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-4">Everything you need to scale</h2>
-                        <p className="text-text-secondary dark:text-gray-400">Modular by design. Powerful by default.</p>
+                    <div className="flex items-center justify-between mb-16">
+                        <h2 className="text-3xl font-bold font-serif dark:text-white uppercase tracking-tighter">Latest Dispatch</h2>
+                        <button type="button" onClick={() => navigate('blog')} className="text-primary-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">View all <ArrowRight className="w-4 h-4" /></button>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[
-                            { icon: Users, title: "CRM", desc: "Track leads and manage customer relationships with visual pipelines." },
-                            { icon: CreditCard, title: "Payments", desc: "Invoicing, subscriptions, and financial reporting built-in." },
-                            { icon: Bot, title: "AI Assistant", desc: "Gemini-powered insights, drafting, and voice control." },
-                            { icon: LayoutDashboard, title: "Projects", desc: "Kanban, Gantt, and task management for teams." },
-                            { icon: Shield, title: "Secure", desc: "Enterprise-grade security with role-based access control." },
-                            { icon: Globe, title: "Global", desc: "Multi-currency and multi-language support." },
-                        ].map((f, i) => (
-                            <div key={i} className="p-8 bg-surface dark:bg-[#111827] rounded-2xl border border-border dark:border-white/5 hover:border-primary-500/50 transition-colors group">
-                                <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-xl flex items-center justify-center text-primary-600 dark:text-primary-400 mb-6 group-hover:scale-110 transition-transform">
-                                    <f.icon className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-3 dark:text-white">{f.title}</h3>
-                                <p className="text-text-secondary dark:text-gray-400 leading-relaxed">
-                                    {f.desc}
-                                </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        {blogPosts.map(post => (
+                            <div key={post.id} className="group cursor-pointer" onClick={() => navigate('blog-post', post)}>
+                                <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-6"><img src={post.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} /></div>
+                                <Badge variant="brand" className="mb-4">{post.category}</Badge>
+                                <h3 className="text-2xl font-bold dark:text-white mb-3 line-clamp-2 leading-snug font-serif">{post.title}</h3>
+                                <p className="text-sm text-text-secondary line-clamp-2 leading-relaxed">{post.summary}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
-
-            {/* Solutions Section */}
-            <section id="solutions" className="py-24 bg-surface dark:bg-[#0B1120]">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        <div>
-                            <div className="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-primary-600 dark:text-primary-400 uppercase bg-primary-50 dark:bg-primary-900/20 rounded-full">
-                                Solutions
-                            </div>
-                            <h2 className="text-4xl font-bold mb-6 leading-tight dark:text-white">
-                                Tailored for your specific workflow
-                            </h2>
-                            <p className="text-lg text-text-secondary dark:text-gray-400 mb-8 leading-relaxed">
-                                Whether you're a lean startup or a scaling enterprise, Nexus adapts to your team structure and goals.
-                            </p>
-                            
-                            <div className="space-y-6">
-                                {[
-                                    { title: "For Sales Teams", desc: "Automate follow-ups and close deals faster with AI-driven insights.", icon: TrendingUp },
-                                    { title: "For Agencies", desc: "Manage multiple clients, projects, and billing in a single view.", icon: Briefcase },
-                                    { title: "For Developers", desc: "Integrate via API and extend functionality with custom modules.", icon: Server }
-                                ].map((item, i) => (
-                                    <div key={i} className="flex gap-4">
-                                        <div className="w-10 h-10 rounded-lg bg-surface-muted dark:bg-white/5 flex items-center justify-center shrink-0">
-                                            <item.icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-text-primary dark:text-white">{item.title}</h4>
-                                            <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">{item.desc}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="relative">
-                            <div className="absolute -inset-4 bg-gradient-to-r from-primary-500 to-indigo-500 rounded-2xl blur-2xl opacity-20"></div>
-                            <div className="relative bg-slate-100 dark:bg-[#111827] border border-slate-300 dark:border-white/10 rounded-2xl p-8 shadow-2xl">
-                                {/* Mock UI Elements for "Solution" Visualization */}
-                                <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-                                    <div className="flex gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                        <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                                        <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                                    </div>
-                                    <div className="h-2 w-20 bg-slate-300 dark:bg-white/10 rounded-full"></div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="flex gap-4">
-                                        <div className="w-1/3 h-32 bg-white dark:bg-[#1F2937] rounded-xl border border-slate-200 dark:border-white/5 p-3 flex flex-col justify-end shadow-sm">
-                                            <div className="h-2 w-12 bg-slate-300 dark:bg-white/10 rounded mb-2"></div>
-                                            <div className="flex gap-1 h-12 items-end">
-                                                <div className="w-1/3 bg-primary-400 h-[60%] rounded-sm"></div>
-                                                <div className="w-1/3 bg-primary-500 h-[100%] rounded-sm"></div>
-                                                <div className="w-1/3 bg-primary-300 h-[40%] rounded-sm"></div>
-                                            </div>
-                                        </div>
-                                        <div className="w-2/3 space-y-3">
-                                            <div className="h-10 bg-white dark:bg-[#1F2937] rounded-lg w-full border border-slate-200 dark:border-white/5 flex items-center px-3 gap-2 shadow-sm">
-                                                <div className="w-4 h-4 rounded-full bg-slate-100 dark:bg-white/10"></div>
-                                                <div className="h-2 w-24 bg-slate-200 dark:bg-white/5 rounded-full"></div>
-                                            </div>
-                                            <div className="h-10 bg-white dark:bg-[#1F2937] rounded-lg w-full border border-slate-200 dark:border-white/5 flex items-center px-3 gap-2 shadow-sm">
-                                                <div className="w-4 h-4 rounded-full bg-slate-100 dark:bg-white/10"></div>
-                                                <div className="h-2 w-24 bg-slate-200 dark:bg-white/5 rounded-full"></div>
-                                            </div>
-                                            <div className="h-10 bg-white dark:bg-[#1F2937] rounded-lg w-full border border-slate-200 dark:border-white/5 flex items-center px-3 gap-2 shadow-sm">
-                                                <div className="w-4 h-4 rounded-full bg-slate-100 dark:bg-white/10"></div>
-                                                <div className="h-2 w-24 bg-slate-200 dark:bg-white/5 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="h-40 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-white/5 rounded-xl w-full p-4 flex gap-4 shadow-sm">
-                                        <div className="flex-1 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5"></div>
-                                        <div className="flex-1 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Pricing Section */}
-            <section id="pricing" className="py-24 bg-surface-subtle dark:bg-[#0F1629]">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-4 dark:text-white">Simple, transparent pricing</h2>
-                        <p className="text-text-secondary dark:text-gray-400">Start for free, upgrade as you grow.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        {[
-                            { name: "Starter", price: "0", desc: "For individuals and freelancers.", features: ["1 User", "Basic CRM", "50 AI Credits/mo", "Community Support"] },
-                            { name: "Pro", price: "29", desc: "For growing teams and startups.", features: ["5 Users", "Advanced Automations", "Unlimited AI Credits", "Priority Support", "Custom Domain"], popular: true },
-                            { name: "Business", price: "99", desc: "For scaling organizations.", features: ["Unlimited Users", "SSO & Advanced Security", "Dedicated Success Manager", "API Access", "Audit Logs"] }
-                        ].map((plan, i) => (
-                            <div key={i} className={`relative p-8 rounded-2xl flex flex-col ${plan.popular ? 'bg-surface dark:bg-[#111827] border-2 border-primary-500 shadow-xl scale-105 z-10' : 'bg-surface dark:bg-[#111827] border border-border dark:border-white/10'}`}>
-                                {plan.popular && (
-                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                        Most Popular
-                                    </div>
-                                )}
-                                <h3 className="text-xl font-bold dark:text-white">{plan.name}</h3>
-                                <p className="text-sm text-text-secondary dark:text-gray-400 mt-2">{plan.desc}</p>
-                                <div className="my-6">
-                                    <span className="text-4xl font-bold dark:text-white">${plan.price}</span>
-                                    <span className="text-text-secondary dark:text-gray-500">/mo</span>
-                                </div>
-                                <ul className="space-y-3 mb-8 flex-1">
-                                    {plan.features.map((f, idx) => (
-                                        <li key={idx} className="flex items-center gap-3 text-sm dark:text-gray-300">
-                                            <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                                            {f}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button onClick={() => setView('signup')} className={`w-full py-3 rounded-xl font-bold transition-all ${plan.popular ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg' : 'bg-surface-muted dark:bg-white/5 text-text-primary dark:text-white hover:bg-surface-subtle dark:hover:bg-white/10'}`}>
-                                    {plan.price === "0" ? "Start Free" : "Get Started"}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA */}
-            <section className="py-24 relative overflow-hidden">
-                <div className="absolute inset-0 bg-primary-900 dark:bg-primary-950">
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                    <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-500 rounded-full blur-3xl opacity-50"></div>
-                    <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500 rounded-full blur-3xl opacity-50"></div>
-                </div>
-                <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Ready to streamline your business?</h2>
-                    <p className="text-xl text-primary-100 mb-10">Join thousands of companies running on Nexus OS.</p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button onClick={() => setView('signup')} className="px-8 py-4 bg-white text-primary-900 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-xl">
-                            Get Started for Free
-                        </button>
-                        <a 
-                            href="mailto:sales@eternalechoes.com"
-                            className="px-8 py-4 bg-transparent border border-white/20 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors inline-flex items-center justify-center"
-                        >
-                            Contact Sales
-                        </a>
-                    </div>
-                    <p className="mt-6 text-sm text-primary-200/60">No credit card required. Cancel anytime.</p>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="bg-surface dark:bg-[#0B1120] border-t border-border dark:border-white/10 py-12 px-6">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-600 rounded flex items-center justify-center text-white">
-                            <Sun className="w-3.5 h-3.5 fill-current" />
-                        </div>
-                        <span className="font-serif font-bold text-lg dark:text-white">Eternal Echoes & Visions</span>
-                    </div>
-                    <div className="text-sm text-text-secondary dark:text-gray-500">
-                        &copy; 2024 Eternal Echoes & Visions Inc. All rights reserved.
-                    </div>
-                    <div className="flex gap-6">
-                        <Github className="w-5 h-5 text-text-tertiary hover:text-text-primary dark:hover:text-white cursor-pointer" />
-                        <Globe className="w-5 h-5 text-text-tertiary hover:text-text-primary dark:hover:text-white cursor-pointer" />
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 
-    if (view === 'login') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white p-4 font-sans">
-                <Card className="w-full max-w-md p-8 border border-border dark:border-white/10 shadow-xl">
-                    <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-4">
-                            <Sun className="w-6 h-6 fill-white text-white" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-text-primary dark:text-white">Welcome back</h2>
-                        <p className="text-text-secondary dark:text-gray-400 mt-2">Enter your credentials to access your workspace.</p>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-text-secondary dark:text-gray-400 mb-1.5 block">Email</label>
-                            <Input type="email" placeholder="name@company.com" required icon={Mail} />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-text-secondary dark:text-gray-400 mb-1.5 block">Password</label>
-                            <Input type="password" placeholder="••••••••" required icon={Lock} />
-                        </div>
-                        <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white" size="lg" type="submit">Sign In</Button>
-                    </form>
-                    <div className="mt-6 text-center text-sm text-text-secondary dark:text-gray-400">
-                        Don't have an account? <button onClick={() => setView('signup')} className="text-primary-600 hover:underline font-medium">Sign up</button>
-                    </div>
-                    <div className="mt-4 text-center">
-                        <button onClick={() => setView('landing')} className="text-xs text-text-tertiary hover:text-text-primary dark:hover:text-white transition-colors">Back to Home</button>
-                    </div>
-                </Card>
+    const PortfolioPage = () => (
+        <div className="min-h-screen pt-32 pb-20 bg-surface dark:bg-[#0B1120]">
+            <div className="max-w-7xl mx-auto px-6 text-center">
+                <Badge variant="brand" className="mb-4">Portfolio</Badge>
+                <h1 className="text-4xl md:text-6xl font-bold font-serif dark:text-white mb-12">Architecture for Growth</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {caseStudies.map(cs => (
+                        <Card key={cs.id} className="p-0 overflow-hidden cursor-pointer hover:shadow-2xl transition-all rounded-[2rem]" onClick={() => setSelectedCase(cs)}>
+                            <div className="aspect-video overflow-hidden"><img src={cs.image} className="w-full h-full object-cover" alt={cs.title} /></div>
+                            <div className="p-10 text-left">
+                                <Badge variant="success" className="mb-4">{cs.impact}</Badge>
+                                <h3 className="text-3xl font-bold dark:text-white font-serif mb-4">{cs.title}</h3>
+                                <p className="text-text-secondary dark:text-gray-400 leading-relaxed">{cs.description}</p>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
             </div>
-        );
-    }
+        </div>
+    );
 
-    if (view === 'signup') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white p-4 font-sans">
-                <Card className="w-full max-w-md p-8 border border-border dark:border-white/10 shadow-xl">
-                    <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg mx-auto mb-4">
-                            <Sun className="w-6 h-6 fill-white text-white" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-text-primary dark:text-white">Create your account</h2>
-                        <p className="text-text-secondary dark:text-gray-400 mt-2">Start your 14-day free trial.</p>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-text-secondary dark:text-gray-400 mb-1.5 block">Full Name</label>
-                            <Input placeholder="John Doe" required />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-text-secondary dark:text-gray-400 mb-1.5 block">Email</label>
-                            <Input type="email" placeholder="name@company.com" required icon={Mail} />
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-text-secondary dark:text-gray-400 mb-1.5 block">Password</label>
-                            <Input type="password" placeholder="••••••••" required icon={Lock} />
-                        </div>
-                        <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white" size="lg" type="submit">Get Started</Button>
-                    </form>
-                    <div className="mt-6 text-center text-sm text-text-secondary dark:text-gray-400">
-                        Already have an account? <button onClick={() => setView('login')} className="text-primary-600 hover:underline font-medium">Sign in</button>
-                    </div>
-                    <div className="mt-4 text-center">
-                        <button onClick={() => setView('landing')} className="text-xs text-text-tertiary hover:text-text-primary dark:hover:text-white transition-colors">Back to Home</button>
-                    </div>
-                </Card>
-            </div>
-        );
-    }
+    const FAQPage = () => (
+        <div className="min-h-screen pt-32 pb-20 bg-surface dark:bg-[#0B1120]"><div className="max-w-3xl mx-auto px-6"><h1 className="text-4xl md:text-6xl font-bold font-serif dark:text-white mb-12 text-center">Strategic FAQ</h1></div></div>
+    );
 
-    return <LandingPage />;
+    return (
+        <div className="min-h-screen bg-surface dark:bg-[#0B1120] text-text-primary dark:text-white font-sans">
+            {view !== 'audit_landing' && <PublicNav />}
+            {renderPublicView()}
+            {view !== 'audit_landing' && <PublicFooter />}
+        </div>
+    );
 };

@@ -1,5 +1,5 @@
 
-// Nexus Business OS - Full Stack Server
+// Echoes Business OS - Full Stack Server
 // Run this using: npm start
 
 const path = require('path');
@@ -50,7 +50,7 @@ app.use(express.static(__dirname));
 app.get('/api/health', (req, res) => {
   res.send({ 
     status: 'Online', 
-    service: 'Nexus OS', 
+    service: 'Echoes OS', 
     payments: stripe ? 'Active' : 'Disabled (No Key)' 
   });
 });
@@ -100,7 +100,7 @@ app.get('*', (req, res) => {
 
 // --- 6. Start Server ---
 app.listen(PORT, () => {
-  console.log(`\n🚀 Nexus Business OS is running!`);
+  console.log(`\n🚀 Echoes Business OS is running!`);
   console.log(`\n👉 Open your browser at: \x1b[36mhttp://localhost:${PORT}\x1b[0m\n`);
   
   if (!STRIPE_KEY) {

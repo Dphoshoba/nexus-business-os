@@ -49,8 +49,8 @@ export const Settings: React.FC = () => {
     // Use the email service
     const success = await sendEmail(
         inviteEmail, 
-        "You've been invited to Nexus", 
-        `Hello,\n\nYou have been invited to join the Nexus workspace by ${userProfile.firstName}.\n\nClick here to join: https://nexus.com/join`
+        "You've been invited to Echoes", 
+        `Hello,\n\nYou have been invited to join the Echoes workspace by ${userProfile.firstName}.\n\nClick here to join: https://echoes.com/join`
     );
 
     if (success) {
@@ -101,7 +101,7 @@ export const Settings: React.FC = () => {
     setIsTestingEmail(true);
     const success = await sendEmail(
         userProfile.email,
-        "Test Email from Nexus",
+        "Test Email from Echoes",
         "This is a test email to verify your configuration settings. If you received this, your email system is working correctly."
     );
     setIsTestingEmail(false);
@@ -159,7 +159,7 @@ export const Settings: React.FC = () => {
       { id: 'team', label: 'Team', icon: Smile, description: 'Employee directory and recruiting pipeline.' },
       { id: 'payments', label: 'Payments', icon: CreditCard, description: 'Invoicing, subscriptions, and product catalog.' },
       { id: 'documents', label: 'Documents', icon: FileText, description: 'Proposals, contracts, and e-signatures.' },
-      { id: 'scan', label: 'Nexus Lens', icon: ScanLine, description: 'AI-powered document scanning and extraction.' },
+      { id: 'scan', label: 'Echoes Lens', icon: ScanLine, description: 'AI-powered document scanning and extraction.' },
       { id: 'automations', label: 'Automations', icon: Workflow, description: 'Visual workflow builder for business logic.' },
       { id: 'canvas', label: 'Canvas', icon: PenTool, description: 'Infinite whiteboard for brainstorming.' },
       { id: 'strategy', label: 'Strategy', icon: Target, description: 'OKR tracking and goal management.' },
@@ -449,7 +449,7 @@ export const Settings: React.FC = () => {
             isOpen={isPaymentOpen}
             onClose={() => setIsPaymentOpen(false)}
             amount={pendingPlan ? getPrice(pendingPlan) : 0}
-            description={`Nexus ${pendingPlan} Subscription`}
+            description={`Echoes ${pendingPlan} Subscription`}
             onSuccess={handlePaymentSuccess}
          />
       </div>

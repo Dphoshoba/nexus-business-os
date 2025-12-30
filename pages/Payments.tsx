@@ -1,20 +1,34 @@
 
-import React, { useState } from 'react';
-import { Invoice, Product } from '../types';
-import { Plus, Download, Filter, MoreHorizontal, Package, Loader2, CreditCard, Tag, ExternalLink, Check, Settings, ShieldCheck, RefreshCw } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Invoice, Product, Expense } from '../types';
+import { 
+    Plus, Download, Filter, MoreHorizontal, Package, Loader2, 
+    CreditCard, Tag, ExternalLink, Check, Settings, ShieldCheck, 
+    RefreshCw, PieChart, TrendingUp, ArrowUpRight, ArrowDownRight,
+    DollarSign, Briefcase, FileText, Sparkles, Wallet, Calculator
+} from 'lucide-react';
 import { Button, Card, Badge, SectionHeader, Tabs, Modal, Input } from '../components/ui/Primitives';
 import { useNotifications } from '../components/ui/NotificationSystem';
 import { useData } from '../context/DataContext';
 import { PaymentModal } from '../components/ui/PaymentModal';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { sendMessageToGemini } from '../services/gemini';
 
 export const Payments: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('Invoices');
+  // Fix: Set default tab to 'Reports' for better discoverability of the automated reporting features
+  const [activeTab, setActiveTab] = useState('Reports');
   const { addNotification } = useNotifications();
-  const { invoices, products, addInvoice, updateInvoice, addProduct, stripeConnected, setStripeConnected, paypalConnected, setPaypalConnected } = useData();
+  const { 
+    invoices, products, expenses, addInvoice, updateInvoice, addProduct, 
+    stripeConnected, setStripeConnected, paypalConnected, setPaypalConnected,
+    consumeAiCredit
+  } = useData();
   
   // State
   const [isStripeConnecting, setIsStripeConnecting] = useState(false);
   const [isPaypalConnecting, setIsPaypalConnecting] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [aiReport, setAiReport] = useState<string | null>(null);
   
   // Modals
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -26,6 +40,74 @@ export const Payments: React.FC = () => {
   const [newInvoice, setNewInvoice] = useState({ client: '', amount: '', date: '' });
   const [newProduct, setNewProduct] = useState({ name: '', price: '', type: 'One-time' });
 
+  // --- Financial Calculations ---
+  const financialMetrics = useMemo(() => {
+    const totalRevenue = invoices
+        .filter(i => i.status === 'Paid')
+        .reduce((acc, i) => acc + i.amount, 0);
+    
+    const totalExpenses = expenses
+        .filter(e => e.status === 'Paid')
+        .reduce((acc, e) => acc + e.amount, 0);
+    
+    const outstandingRevenue = invoices
+        .filter(i => i.status === 'Pending' || i.status === 'Overdue')
+        .reduce((acc, i) => acc + i.amount, 0);
+
+    const netProfit = totalRevenue - totalExpenses;
+    const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    
+    return { totalRevenue, totalExpenses, netProfit, margin, outstandingRevenue };
+  }, [invoices, expenses]);
+
+  const expenseBreakdown = useMemo(() => {
+    const categories: Record<string, number> = {};
+    expenses.forEach(e => {
+        categories[e.category] = (categories[e.category] || 0) + e.amount;
+    });
+    return Object.entries(categories).map(([name, value]) => ({ name, value }));
+  }, [expenses]);
+
+  const chartData = useMemo(() => {
+    // Basic day tracking for the chart
+    return [
+      { name: 'W1', revenue: 4200, spend: 2100 },
+      { name: 'W2', revenue: 3800, spend: 2800 },
+      { name: 'W3', revenue: 5600, spend: 1900 },
+      { name: 'W4', revenue: financialMetrics.totalRevenue / 10, spend: financialMetrics.totalExpenses / 10 },
+    ];
+  }, [financialMetrics]);
+
+  // --- Handlers ---
+  const handleGenerateAiReport = async () => {
+    // Force switch to Reports tab if triggered from elsewhere
+    setActiveTab('Reports');
+    
+    if (!consumeAiCredit()) {
+        addNotification({ title: 'Limit Reached', message: 'Upgrade to Pro for AI Financial Briefings.', type: 'warning' });
+        return;
+    }
+
+    setIsGeneratingReport(true);
+    const prompt = `As a Virtual CFO, analyze these business financials:
+    - Gross Revenue: $${financialMetrics.totalRevenue}
+    - Operating Expenses: $${financialMetrics.totalExpenses}
+    - Net Profit: $${financialMetrics.netProfit}
+    - Outstanding: $${financialMetrics.outstandingRevenue}
+    
+    Provide a concise 3-sentence executive summary highlighting health and 2 strategic recommendations for next month.`;
+
+    try {
+        const result = await sendMessageToGemini(prompt);
+        setAiReport(result);
+        addNotification({ title: 'Report Ready', message: 'AI Financial Briefing generated.', type: 'success' });
+    } catch (e) {
+        addNotification({ title: 'AI Error', message: 'Failed to generate financial analysis.', type: 'error' });
+    } finally {
+        setIsGeneratingReport(false);
+    }
+  };
+
   const handleConnectStripe = () => {
       setIsStripeConnecting(true);
       setTimeout(() => {
@@ -33,29 +115,6 @@ export const Payments: React.FC = () => {
           setIsStripeConnecting(false);
           addNotification({ title: 'Stripe Connected', message: 'Your account is now ready to accept card payments.', type: 'success' });
       }, 2000);
-  };
-
-  const handleDisconnectStripe = () => {
-      if (window.confirm("Disconnect Stripe account?")) {
-          setStripeConnected(false);
-          addNotification({ title: 'Stripe Disconnected', message: 'Payment gateway removed.', type: 'info' });
-      }
-  };
-
-  const handleConnectPaypal = () => {
-      setIsPaypalConnecting(true);
-      setTimeout(() => {
-          setPaypalConnected(true);
-          setIsPaypalConnecting(false);
-          addNotification({ title: 'PayPal Connected', message: 'You can now accept payments via PayPal.', type: 'success' });
-      }, 2000);
-  };
-
-  const handleDisconnectPaypal = () => {
-      if (window.confirm("Disconnect PayPal account?")) {
-          setPaypalConnected(false);
-          addNotification({ title: 'PayPal Disconnected', message: 'Payment gateway removed.', type: 'info' });
-      }
   };
 
   const handleCreateInvoice = (e: React.FormEvent) => {
@@ -73,57 +132,175 @@ export const Payments: React.FC = () => {
     addNotification({ title: 'Invoice Created', message: `Invoice #${invoice.id} created for ${invoice.client}`, type: 'success' });
   };
 
-  const handleCreateProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    const product: Product = {
-        id: `PROD-${products.length + 1}`,
-        name: newProduct.name,
-        price: parseFloat(newProduct.price),
-        type: newProduct.type as 'One-time' | 'Subscription',
-        currency: 'USD',
-        sales: 0
-    };
-    addProduct(product);
-    setNewProduct({ name: '', price: '', type: 'One-time' });
-    setIsProductModalOpen(false);
-    setActiveTab('Products'); // UX Improvement: Switch to products tab
-    addNotification({ title: 'Product Created', message: `${product.name} has been added to your catalog.`, type: 'success' });
-  };
+  const COLORS = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'];
 
-  const initiatePayment = (invoice: Invoice) => {
-      if (!stripeConnected && !paypalConnected) {
-          addNotification({ title: 'Payment Gateway Missing', message: 'Please connect Stripe or PayPal to process payments.', type: 'warning' });
-          return;
-      }
-      setInvoiceToPay(invoice);
-      setIsPaymentModalOpen(true);
-  };
+  const ReportingTab = () => (
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* AI Briefing Panel */}
+          <div className="bg-gradient-to-br from-gray-900 to-indigo-950 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden border border-white/5">
+              <div className="relative z-10 flex flex-col md:flex-row gap-8">
+                  <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-6">
+                           <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md border border-white/10">
+                               <Sparkles className="w-5 h-5 text-indigo-300" />
+                           </div>
+                           <h3 className="text-lg font-bold">Echoes Financial Intelligence</h3>
+                           <Badge className="bg-indigo-500/30 text-indigo-200 border-none">AI Powered</Badge>
+                      </div>
 
-  const handlePaymentSuccess = () => {
-      if (invoiceToPay) {
-          updateInvoice({ ...invoiceToPay, status: 'Paid' });
-          setInvoiceToPay(null);
-          addNotification({ title: 'Payment Successful', message: `Payment received for invoice #${invoiceToPay.id}`, type: 'success' });
-      }
-  };
+                      {!aiReport ? (
+                          <div className="space-y-4">
+                              <p className="text-indigo-100/70 text-sm leading-relaxed max-w-2xl">
+                                  Generate an automated CFO briefing. Echoes will analyze your profit margins, expense categories, and outstanding debt to provide strategic growth recommendations.
+                              </p>
+                              <Button 
+                                className="bg-white text-indigo-900 hover:bg-indigo-50 border-none shadow-lg shadow-indigo-500/20 relative group overflow-hidden"
+                                onClick={handleGenerateAiReport}
+                                disabled={isGeneratingReport}
+                              >
+                                {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                    <>
+                                        <span className="relative z-10 flex items-center gap-2">Run Financial Analysis <TrendingUp className="w-4 h-4" /></span>
+                                        <div className="absolute inset-0 bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-all animate-pulse"></div>
+                                    </>
+                                )}
+                              </Button>
+                          </div>
+                      ) : (
+                          <div className="animate-in fade-in zoom-in-95">
+                              <p className="text-indigo-50 italic leading-relaxed text-lg font-serif">"{aiReport}"</p>
+                              <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
+                                   <div className="flex items-center gap-2 text-xs text-indigo-300">
+                                       <TrendingUp className="w-4 h-4" /> Healthy Profit Margin
+                                   </div>
+                                   <div className="flex items-center gap-2 text-xs text-indigo-300">
+                                       <Wallet className="w-4 h-4" /> Strategic Spend Optimized
+                                   </div>
+                              </div>
+                              <button onClick={() => setAiReport(null)} className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 mt-6 hover:text-indigo-300 transition-colors">Dismiss Report</button>
+                          </div>
+                      )}
+                  </div>
+
+                  <div className="w-full md:w-64 space-y-4">
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                           <p className="text-[10px] text-indigo-300 uppercase font-bold tracking-widest mb-1">Operating Margin</p>
+                           <p className="text-3xl font-bold">{financialMetrics.margin.toFixed(1)}%</p>
+                           <div className="w-full h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
+                               <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${financialMetrics.margin}%` }}></div>
+                           </div>
+                      </div>
+                      <div className="p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                           <p className="text-[10px] text-indigo-300 uppercase font-bold tracking-widest mb-1">Profitability Rank</p>
+                           <p className="text-lg font-bold">Top 15% in sector</p>
+                           <p className="text-[10px] text-indigo-400/70 mt-1">Based on SaaS benchmarks</p>
+                      </div>
+                  </div>
+              </div>
+              <Sparkles className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 rotate-12" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profit/Loss Chart */}
+              <Card className="lg:col-span-2">
+                  <div className="flex items-center justify-between mb-8">
+                      <div>
+                          <h3 className="text-lg font-bold">Financial Flux</h3>
+                          <p className="text-xs text-text-tertiary">Visualizing revenue against spend cycles.</p>
+                      </div>
+                      <div className="flex gap-4">
+                           <div className="flex items-center gap-2 text-xs font-medium text-emerald-600"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Revenue</div>
+                           <div className="flex items-center gap-2 text-xs font-medium text-rose-600"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Spend</div>
+                      </div>
+                  </div>
+                  <div className="h-[350px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                              <defs>
+                                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                                  </linearGradient>
+                                  <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.1}/>
+                                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                                  </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill:'#9CA3AF'}} dy={10} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill:'#9CA3AF'}} tickFormatter={(v) => `$${v}`} />
+                              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', background: '#1F2937', color: '#fff' }} />
+                              <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
+                              <Area type="monotone" dataKey="spend" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)" />
+                          </AreaChart>
+                      </ResponsiveContainer>
+                  </div>
+              </Card>
+
+              {/* Sidebar Cards */}
+              <div className="space-y-6">
+                  <Card className="flex flex-col items-center text-center">
+                       <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center text-amber-600 mb-4">
+                           <Calculator className="w-6 h-6" />
+                       </div>
+                       <h4 className="font-bold text-sm uppercase tracking-widest text-text-tertiary">Tax Estimate (Q4)</h4>
+                       <p className="text-3xl font-bold mt-2 text-text-primary dark:text-text-primary-dark">
+                           ${(financialMetrics.netProfit * 0.25).toLocaleString()}
+                       </p>
+                       <p className="text-xs text-text-tertiary mt-2">Based on 25% corporate tax projection.</p>
+                       <Button variant="ghost" size="sm" className="mt-6 w-full border border-border">Open Tax Center</Button>
+                  </Card>
+
+                  <Card>
+                       <h4 className="font-bold text-sm mb-4 flex items-center gap-2"><PieChart className="w-4 h-4 text-primary-500" /> Spend Categories</h4>
+                       <div className="h-[180px] w-full">
+                           <ResponsiveContainer width="100%" height="100%">
+                               <RePieChart>
+                                   <Pie 
+                                        data={expenseBreakdown} 
+                                        innerRadius={60} 
+                                        outerRadius={80} 
+                                        paddingAngle={5} 
+                                        dataKey="value"
+                                    >
+                                       {expenseBreakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                   </Pie>
+                                   <Tooltip />
+                               </RePieChart>
+                           </ResponsiveContainer>
+                       </div>
+                       <div className="mt-4 space-y-2">
+                           {expenseBreakdown.map((cat, i) => (
+                               <div key={cat.name} className="flex items-center justify-between text-xs">
+                                   <div className="flex items-center gap-2">
+                                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                       <span className="text-text-secondary">{cat.name}</span>
+                                   </div>
+                                   <span className="font-bold text-text-primary dark:text-text-primary-dark">${cat.value.toLocaleString()}</span>
+                               </div>
+                           ))}
+                       </div>
+                  </Card>
+              </div>
+          </div>
+      </div>
+  );
 
   return (
     <div className="h-full flex flex-col">
       <SectionHeader 
-        title="Payments" 
-        subtitle="Manage invoices, subscriptions, and products."
+        title="Finance Operating System" 
+        subtitle="End-to-end payment processing and automated reporting."
         action={
           <div className="flex gap-3">
-             <Button variant="secondary" icon={Download} size="sm">Export</Button>
-             <Button variant="secondary" icon={Package} size="sm" onClick={() => setIsProductModalOpen(true)}>Create Product</Button>
-             <Button icon={Plus} size="sm" onClick={() => setIsInvoiceModalOpen(true)}>Create Invoice</Button>
+             <Button variant="secondary" icon={Download} size="sm">Export CSV</Button>
+             <Button variant="secondary" icon={Package} size="sm" onClick={() => setIsProductModalOpen(true)}>New Product</Button>
+             <Button icon={Plus} size="sm" onClick={() => setIsInvoiceModalOpen(true)}>New Invoice</Button>
           </div>
         }
       />
 
-      {/* Payment Gateways Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Stripe Card */}
           <Card className={`relative overflow-hidden transition-all duration-300 ${stripeConnected ? 'border-[#635BFF]/30 bg-[#635BFF]/5' : 'hover:border-[#635BFF]/30'}`}>
               <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -140,25 +317,15 @@ export const Payments: React.FC = () => {
                   </div>
                   <div>
                       {stripeConnected ? (
-                           <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" icon={ExternalLink} onClick={() => window.open('#', '_blank')} />
-                                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleDisconnectStripe}>Disconnect</Button>
-                           </div>
+                           <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setStripeConnected(false)}>Disconnect</Button>
                       ) : (
-                          <Button 
-                            onClick={handleConnectStripe} 
-                            disabled={isStripeConnecting}
-                            className="bg-[#635BFF] hover:bg-[#534CC2] text-white border-transparent"
-                            size="sm"
-                          >
-                              {isStripeConnecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Connecting...</> : 'Connect'}
+                          <Button onClick={handleConnectStripe} disabled={isStripeConnecting} className="bg-[#635BFF] hover:bg-[#534CC2] text-white border-transparent" size="sm">
+                              {isStripeConnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
                           </Button>
                       )}
                   </div>
               </div>
           </Card>
-
-          {/* PayPal Card */}
           <Card className={`relative overflow-hidden transition-all duration-300 ${paypalConnected ? 'border-[#0070BA]/30 bg-[#0070BA]/5' : 'hover:border-[#0070BA]/30'}`}>
               <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -173,269 +340,131 @@ export const Payments: React.FC = () => {
                           <p className="text-sm text-text-secondary mt-1">Accept payments via PayPal wallet.</p>
                       </div>
                   </div>
-                  <div>
-                      {paypalConnected ? (
-                           <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" icon={ExternalLink} onClick={() => window.open('#', '_blank')} />
-                                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleDisconnectPaypal}>Disconnect</Button>
-                           </div>
-                      ) : (
-                          <Button 
-                            onClick={handleConnectPaypal} 
-                            disabled={isPaypalConnecting}
-                            className="bg-[#0070BA] hover:bg-[#005EA6] text-white border-transparent"
-                            size="sm"
-                          >
-                              {isPaypalConnecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Connecting...</> : 'Connect'}
-                          </Button>
-                      )}
-                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setPaypalConnected(!paypalConnected)}>{paypalConnected ? 'Disconnect' : 'Connect'}</Button>
               </div>
           </Card>
       </div>
 
       <Tabs 
-        tabs={['Invoices', 'Products', 'Subscriptions']} 
+        tabs={['Reports', 'Invoices', 'Expenses', 'Products']} 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-         <Card padding="p-4">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">Total Revenue</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+         <Card padding="p-4" className="border-l-4 border-l-emerald-500 relative group">
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Gross Revenue</p>
             <div className="flex items-end justify-between mt-2">
-               <h3 className="text-2xl font-bold text-text-primary">
-                 ${invoices.reduce((acc, inv) => inv.status === 'Paid' ? acc + inv.amount : acc, 0).toLocaleString()}
-               </h3>
-               <Badge variant="success" className="mb-1">+12%</Badge>
+               <h3 className="text-2xl font-bold">${financialMetrics.totalRevenue.toLocaleString()}</h3>
+               <ArrowUpRight className="text-emerald-500 w-5 h-5" />
+            </div>
+            {/* Shortcut to AI Analysis */}
+            <button 
+                onClick={handleGenerateAiReport}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-primary-50 text-primary-600 rounded-md"
+                title="Quick AI Analysis"
+            >
+                <Sparkles className="w-3 h-3" />
+            </button>
+         </Card>
+         <Card padding="p-4" className="border-l-4 border-l-rose-500">
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Total Spend</p>
+            <div className="flex items-end justify-between mt-2">
+               <h3 className="text-2xl font-bold">${financialMetrics.totalExpenses.toLocaleString()}</h3>
+               <ArrowDownRight className="text-rose-500 w-5 h-5" />
             </div>
          </Card>
-         <Card padding="p-4">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">Outstanding</p>
+         <Card padding="p-4" className="border-l-4 border-l-primary-500">
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Net Profit</p>
             <div className="flex items-end justify-between mt-2">
-               <h3 className="text-2xl font-bold text-text-primary">
-                 ${invoices.reduce((acc, inv) => inv.status === 'Pending' ? acc + inv.amount : acc, 0).toLocaleString()}
-               </h3>
-               <span className="text-xs text-text-tertiary mb-1">{invoices.filter(i => i.status === 'Pending').length} invoices</span>
+               <h3 className="text-2xl font-bold">${financialMetrics.netProfit.toLocaleString()}</h3>
+               <Badge variant="brand" className="text-[9px] px-1">Safe</Badge>
             </div>
          </Card>
-         <Card padding="p-4">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">MRR</p>
+         <Card padding="p-4" className="border-l-4 border-l-amber-500">
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Outstanding</p>
             <div className="flex items-end justify-between mt-2">
-               <h3 className="text-2xl font-bold text-text-primary">$18,400</h3>
-               <Badge variant="brand" className="mb-1">+5%</Badge>
+               <h3 className="text-2xl font-bold">${financialMetrics.outstandingRevenue.toLocaleString()}</h3>
+               <span className="text-[10px] text-text-tertiary">{invoices.filter(i => i.status !== 'Paid').length} Unpaid</span>
             </div>
          </Card>
       </div>
 
-      {activeTab === 'Invoices' && (
-        <Card className="flex-1 overflow-hidden flex flex-col" padding="p-0">
-          <div className="flex items-center gap-2 p-3 border-b border-border bg-surface-subtle/30">
-             <div className="relative flex-1 max-w-sm">
-                <input type="text" placeholder="Filter invoices..." className="w-full pl-3 pr-3 py-1.5 text-sm bg-surface border border-border rounded-md focus:ring-1 focus:ring-primary-500 outline-none" />
-             </div>
-             <Button variant="ghost" size="sm" icon={Filter}>Filter</Button>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-surface-subtle sticky top-0 z-10 border-b border-border">
-                <tr>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Invoice ID</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Client</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-surface-subtle/50 transition-colors group">
-                    <td className="px-6 py-4 text-sm font-medium text-text-primary">{invoice.id}</td>
-                    <td className="px-6 py-4 text-sm text-text-secondary">{invoice.client}</td>
-                    <td className="px-6 py-4 text-sm text-text-secondary">{invoice.date}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-text-primary">${invoice.amount.toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <Badge variant={
-                          invoice.status === 'Paid' ? 'success' : 
-                          invoice.status === 'Overdue' ? 'danger' : 'warning'
-                      }>
-                          {invoice.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                       {invoice.status === 'Pending' ? (
-                           <Button 
-                                size="sm" 
-                                variant={stripeConnected || paypalConnected ? 'primary' : 'secondary'} 
-                                className="h-7 text-xs"
-                                onClick={() => initiatePayment(invoice)}
-                            >
-                                Charge Card
-                           </Button>
-                       ) : (
-                           <button className="text-text-tertiary hover:text-text-primary transition-opacity">
-                                <MoreHorizontal className="w-4 h-4" />
-                           </button>
-                       )}
-                    </td>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+          {activeTab === 'Reports' && <ReportingTab />}
+
+          {activeTab === 'Invoices' && (
+            <Card className="overflow-hidden flex flex-col" padding="p-0">
+              <table className="w-full text-left">
+                <thead className="bg-surface-subtle dark:bg-surface-muted-dark text-xs font-bold text-text-tertiary uppercase">
+                  <tr>
+                    <th className="px-6 py-4">Invoice ID</th>
+                    <th className="px-6 py-4">Client</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+                </thead>
+                <tbody className="divide-y divide-border dark:divide-border-dark">
+                  {invoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-surface-subtle/50 group transition-colors">
+                      <td className="px-6 py-4 text-sm font-bold">{inv.id}</td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">{inv.client}</td>
+                      <td className="px-6 py-4 text-sm font-bold">${inv.amount.toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant={inv.status === 'Paid' ? 'success' : inv.status === 'Overdue' ? 'danger' : 'warning'}>{inv.status}</Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <Button size="sm" variant="ghost" icon={MoreHorizontal} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
 
-      {(activeTab === 'Products' || activeTab === 'Subscriptions') && (
-        <div className="h-full">
-            {products.length === 0 && activeTab === 'Products' ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-surface-subtle/30 h-96">
-                    <div className="w-12 h-12 bg-surface-muted rounded-full flex items-center justify-center mb-4">
-                        <Package className="w-6 h-6 text-text-tertiary" />
-                    </div>
-                    <h3 className="text-base font-semibold text-text-primary">No products yet</h3>
-                    <p className="text-sm text-text-secondary mt-1 max-w-xs text-center">
-                        Start by creating your first product to begin selling.
-                    </p>
-                    <Button className="mt-6" icon={Plus} variant="secondary" onClick={() => setIsProductModalOpen(true)}>Create Product</Button>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map(product => (
-                        <Card key={product.id} className="hover:border-primary-200 transition-colors">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
-                                    <Tag className="w-5 h-5" />
-                                </div>
-                                <Badge variant="neutral">{product.type}</Badge>
-                            </div>
-                            <h3 className="font-semibold text-text-primary">{product.name}</h3>
-                            <p className="text-2xl font-bold text-text-primary mt-2">${product.price}</p>
-                            <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
-                                <span className="text-sm text-text-secondary">{product.sales} sales</span>
-                                <Button size="sm" variant="ghost">Edit</Button>
-                            </div>
-                        </Card>
-                    ))}
-                    {activeTab === 'Products' && (
-                         <button 
-                            onClick={() => setIsProductModalOpen(true)}
-                            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl hover:border-primary-300 hover:bg-primary-50/30 transition-all gap-2 text-text-secondary hover:text-primary-600"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center">
-                                <Plus className="w-5 h-5" />
-                            </div>
-                            <span className="text-sm font-medium">Add New Product</span>
-                        </button>
-                    )}
-                </div>
-            )}
-            
-            {activeTab === 'Subscriptions' && (
-                 <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-surface-subtle/30 h-96 mt-4">
-                    <ShieldCheck className="w-12 h-12 text-text-tertiary mb-3 opacity-50" />
-                    <p className="text-text-secondary font-medium">Subscriptions Dashboard</p>
-                    <p className="text-xs text-text-tertiary mt-1">
-                        {stripeConnected || paypalConnected ? 'No active subscriptions found.' : 'Connect Stripe or PayPal to manage subscriptions.'}
-                    </p>
-                 </div>
-            )}
-        </div>
-      )}
+          {activeTab === 'Expenses' && (
+            <Card className="overflow-hidden flex flex-col" padding="p-0">
+              <table className="w-full text-left">
+                <thead className="bg-surface-subtle dark:bg-surface-muted-dark text-xs font-bold text-text-tertiary uppercase">
+                  <tr>
+                    <th className="px-6 py-4">Vendor</th>
+                    <th className="px-6 py-4">Category</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border dark:divide-border-dark">
+                  {expenses.map((exp) => (
+                    <tr key={exp.id} className="hover:bg-surface-subtle/50 group transition-colors">
+                      <td className="px-6 py-4 text-sm font-bold">{exp.vendor}</td>
+                      <td className="px-6 py-4 text-sm"><Badge variant="neutral">{exp.category}</Badge></td>
+                      <td className="px-6 py-4 text-sm font-bold text-rose-600">-${exp.amount.toLocaleString()}</td>
+                      <td className="px-6 py-4"><Badge variant={exp.status === 'Paid' ? 'success' : 'warning'}>{exp.status}</Badge></td>
+                      <td className="px-6 py-4 text-right text-xs text-text-tertiary">{exp.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
+      </div>
 
-      {/* --- Modals --- */}
-      
-      {/* Invoice Modal */}
+      {/* Existing Modals */}
       <Modal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} title="Create New Invoice">
          <form onSubmit={handleCreateInvoice} className="space-y-4">
-             <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-text-secondary">Client Name</label>
-                 <Input 
-                    placeholder="e.g. Acme Corp" 
-                    value={newInvoice.client}
-                    onChange={e => setNewInvoice({...newInvoice, client: e.target.value})}
-                    required
-                 />
-             </div>
-             <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-text-secondary">Amount ($)</label>
-                 <Input 
-                    type="number" 
-                    placeholder="0.00" 
-                    value={newInvoice.amount}
-                    onChange={e => setNewInvoice({...newInvoice, amount: e.target.value})}
-                    required
-                 />
-             </div>
-             <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-text-secondary">Due Date</label>
-                 <Input 
-                    type="date" 
-                    value={newInvoice.date}
-                    onChange={e => setNewInvoice({...newInvoice, date: e.target.value})}
-                 />
-             </div>
+             <Input placeholder="Client Name" value={newInvoice.client} onChange={e => setNewInvoice({...newInvoice, client: e.target.value})} required />
+             <Input type="number" placeholder="Amount ($)" value={newInvoice.amount} onChange={e => setNewInvoice({...newInvoice, amount: e.target.value})} required />
+             <Input type="date" value={newInvoice.date} onChange={e => setNewInvoice({...newInvoice, date: e.target.value})} />
              <div className="pt-4 flex justify-end gap-3">
                  <Button type="button" variant="ghost" onClick={() => setIsInvoiceModalOpen(false)}>Cancel</Button>
                  <Button type="submit">Create Invoice</Button>
              </div>
          </form>
       </Modal>
-
-      {/* Product Modal */}
-      <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="Add Product">
-         <form onSubmit={handleCreateProduct} className="space-y-4">
-             <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-text-secondary">Product Name</label>
-                 <Input 
-                    placeholder="e.g. Basic Plan" 
-                    value={newProduct.name}
-                    onChange={e => setNewProduct({...newProduct, name: e.target.value})}
-                    required
-                 />
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-secondary">Price ($)</label>
-                    <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        value={newProduct.price}
-                        onChange={e => setNewProduct({...newProduct, price: e.target.value})}
-                        required
-                    />
-                </div>
-                <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-text-secondary">Type</label>
-                    <select 
-                        className="w-full h-[38px] px-3 bg-surface border border-border rounded-lg text-sm text-text-primary focus:ring-2 focus:ring-primary-100 outline-none"
-                        value={newProduct.type}
-                        onChange={e => setNewProduct({...newProduct, type: e.target.value})}
-                    >
-                        <option value="One-time">One-time</option>
-                        <option value="Subscription">Subscription</option>
-                    </select>
-                </div>
-             </div>
-             <div className="pt-4 flex justify-end gap-3">
-                 <Button type="button" variant="ghost" onClick={() => setIsProductModalOpen(false)}>Cancel</Button>
-                 <Button type="submit">Add Product</Button>
-             </div>
-         </form>
-      </Modal>
-
-      {/* Payment Modal */}
-      {invoiceToPay && (
-          <PaymentModal 
-            isOpen={isPaymentModalOpen}
-            onClose={() => { setIsPaymentModalOpen(false); setInvoiceToPay(null); }}
-            amount={invoiceToPay.amount}
-            description={`Invoice #${invoiceToPay.id}`}
-            onSuccess={handlePaymentSuccess}
-          />
-      )}
 
     </div>
   );

@@ -24,24 +24,33 @@ import { Team } from './pages/Team';
 import { Canvas } from './pages/Canvas';
 import { Campaigns } from './pages/Campaigns';
 import { SmartScan } from './pages/SmartScan';
+import { ClientPortal } from './pages/ClientPortal';
+import { BlogAdmin } from './pages/BlogAdmin';
+import { AuditLanding } from './pages/AuditLanding';
+import { MarketIntel } from './pages/MarketIntel';
 import { NotificationProvider } from './components/ui/NotificationSystem';
 import { DataProvider } from './context/DataContext';
 import { LanguageProvider } from './context/LanguageContext';
 
 const AppContent: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authStatus, setAuthStatus] = useState<'none' | 'team' | 'client'>('none');
   const [currentView, setCurrentView] = useState<View>('dashboard');
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  const handleLogin = (role: 'team' | 'client') => {
+    setAuthStatus(role);
+    setCurrentView(role === 'team' ? 'dashboard' : 'client_portal');
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentView('dashboard'); // Reset view on logout
+    setAuthStatus('none');
+    setCurrentView('dashboard');
   };
 
   const renderView = () => {
+    if (authStatus === 'client') {
+      return <ClientPortal onLogout={handleLogout} />;
+    }
+
     switch (currentView) {
       case 'dashboard':
         return <Dashboard />;
@@ -79,6 +88,12 @@ const AppContent: React.FC = () => {
         return <Campaigns />;
       case 'scan':
         return <SmartScan />;
+      case 'blog_admin':
+        return <BlogAdmin />;
+      case 'audit_landing':
+        return <AuditLanding />;
+      case 'market_intel':
+        return <MarketIntel />;
       case 'settings':
         return <Settings />;
       case 'help':
@@ -90,7 +105,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  if (authStatus === 'none') {
     return <Auth onLogin={handleLogin} />;
   }
 

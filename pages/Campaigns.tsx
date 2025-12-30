@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SectionHeader, Card, Button, Badge, Modal, Input } from '../components/ui/Primitives';
 import { Send, Plus, Users, BarChart3, ChevronLeft, Sparkles, Loader2, Image as ImageIcon, Type, Link as LinkIcon, Eye, Clock, Mail } from 'lucide-react';
@@ -161,12 +162,12 @@ export const Campaigns: React.FC = () => {
                                 <div className="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
                             </div>
                             <div 
-                                className="prose max-w-none" 
+                                className="prose max-none" 
                                 dangerouslySetInnerHTML={{ __html: editorContent || '<div class="text-center text-gray-400 py-20 border-2 border-dashed border-gray-200 rounded-lg">Drag blocks or use AI to start writing</div>' }}
                             />
                             {editorContent && (
                                 <div className="mt-12 pt-6 border-t border-gray-100 text-center text-xs text-gray-400">
-                                    <p>Sent via Nexus Business OS</p>
+                                    <p>Sent via Echoes Business OS</p>
                                     <p className="mt-2">Unsubscribe | View in Browser</p>
                                 </div>
                             )}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SectionHeader, Card, Button, Badge, Modal, Input } from '../components/ui/Primitives';
 import { Megaphone, Plus, Calendar, Twitter, Linkedin, Instagram, Sparkles, Loader2, Image as ImageIcon, Send, Clock, MoreHorizontal, Heart, MessageSquare } from 'lucide-react';
@@ -52,7 +53,7 @@ export const Social: React.FC = () => {
 
     const handleAiGenerate = async () => {
         setIsGenerating(true);
-        const prompt = `Write a viral, professional social media post for ${selectedPlatform} about a new software feature launch for "Nexus Business OS". Include 2 emojis and 3 hashtags. Keep it under 280 characters if Twitter.`;
+        const prompt = `Write a viral, professional social media post for ${selectedPlatform} about a new software feature launch for "Echoes Business OS". Include 2 emojis and 3 hashtags. Keep it under 280 characters if Twitter.`;
         try {
             const text = await sendMessageToGemini(prompt);
             setNewPostContent(text);
@@ -264,9 +265,8 @@ export const Social: React.FC = () => {
                                 )}
                             </div>
                             <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between text-gray-400">
-                                <div className="h-4 w-4 bg-gray-100 dark:bg-gray-800 rounded"></div>
-                                <div className="h-4 w-4 bg-gray-100 dark:bg-gray-800 rounded"></div>
-                                <div className="h-4 w-4 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                                <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                                <div className="h-4 w-8 bg-gray-100 dark:bg-gray-800 rounded"></div>
                             </div>
                         </div>
                     </div>

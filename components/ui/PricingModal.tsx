@@ -53,7 +53,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             <Modal isOpen={isOpen} onClose={onClose} title="Choose your plan">
                 <div className="space-y-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold mb-2 text-text-primary dark:text-text-primary-dark">Unlock the full power of Nexus</h2>
+                        <h2 className="text-2xl font-bold mb-2 text-text-primary dark:text-text-primary-dark">Unlock the full power of Echoes</h2>
                         <p className="text-text-secondary dark:text-text-secondary-dark">Scale your business with AI-driven insights and automation.</p>
                     </div>
                     
@@ -90,7 +90,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                                 <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-primary-500" /> AI Assistant (Unlimited)</li>
                                 <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-primary-500" /> Advanced Automations</li>
                                 <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-primary-500" /> Up to 5 Users</li>
-                                <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-primary-500" /> Remove Nexus Branding</li>
+                                <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-primary-500" /> Remove Echoes Branding</li>
                             </ul>
                             <Button 
                                 variant="primary" 
@@ -132,7 +132,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                 isOpen={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
                 amount={pendingPlan ? getPrice(pendingPlan) : 0}
-                description={`Nexus ${pendingPlan} Subscription (Monthly)`}
+                description={`Echoes ${pendingPlan} Subscription (Monthly)`}
                 onSuccess={handlePaymentSuccess}
             />
         </>

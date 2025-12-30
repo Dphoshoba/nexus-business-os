@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SectionHeader, Card, Button, Input, Modal, Badge } from '../components/ui/Primitives';
 import { HardDrive, Upload, Folder, FileText, Image as ImageIcon, Search, Star, Clock, MoreVertical, Trash2, Download, Share2, Sparkles, Loader2, FileSpreadsheet, ChevronRight, Home } from 'lucide-react';
@@ -90,7 +91,7 @@ export const Storage: React.FC = () => {
     return (
         <div className="h-full flex flex-col">
             <SectionHeader
-                title="Nexus Drive"
+                title="Echoes Drive"
                 subtitle="Secure asset management and file storage."
                 action={
                     <div className="flex gap-2">
@@ -235,7 +236,7 @@ export const Storage: React.FC = () => {
                                 <div className="mt-6 pt-4 border-t border-border dark:border-border-dark">
                                     <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
                                         <Sparkles className="w-3.5 h-3.5 text-primary-500" />
-                                        Nexus AI
+                                        Echoes AI
                                     </h4>
                                     {!aiSummary ? (
                                         <Button 

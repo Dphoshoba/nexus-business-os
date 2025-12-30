@@ -1,4 +1,5 @@
-import { Deal, DealStage, Appointment, Contact, Company, Invoice } from './types';
+
+import { Deal, DealStage, Appointment, Contact, Company, Invoice, Expense } from './types';
 
 export const INITIAL_DEALS: Deal[] = [
   { id: '1', title: 'Website Redesign', company: 'Acme Corp', value: 12000, stage: DealStage.PROPOSAL, tags: ['High Priority'], lastActivity: '2h ago' },
@@ -26,6 +27,14 @@ export const MOCK_INVOICES: Invoice[] = [
   { id: 'INV-002', client: 'Globex', amount: 5000, status: 'Pending', date: 'Oct 26, 2023' },
   { id: 'INV-003', client: 'Initech', amount: 2500, status: 'Overdue', date: 'Oct 15, 2023' },
   { id: 'INV-004', client: 'Wayne Ent', amount: 15000, status: 'Paid', date: 'Oct 10, 2023' },
+];
+
+export const MOCK_EXPENSES: Expense[] = [
+  { id: 'EXP-001', vendor: 'Amazon Web Services', category: 'SaaS', amount: 450.00, date: 'Oct 20, 2023', status: 'Paid' },
+  { id: 'EXP-002', vendor: 'Meta Ads', category: 'Marketing', amount: 1200.00, date: 'Oct 22, 2023', status: 'Paid' },
+  { id: 'EXP-003', vendor: 'Remote Team Hub', category: 'Payroll', amount: 4500.00, date: 'Oct 25, 2023', status: 'Pending' },
+  { id: 'EXP-004', vendor: 'Starbucks', category: 'Travel', amount: 24.50, date: 'Oct 25, 2023', status: 'Paid' },
+  { id: 'EXP-005', vendor: 'Coworking Space', category: 'Office', amount: 300.00, date: 'Oct 01, 2023', status: 'Paid' },
 ];
 
 export const UPCOMING_APPOINTMENTS: Appointment[] = [

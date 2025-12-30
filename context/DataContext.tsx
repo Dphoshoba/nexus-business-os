@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Deal, Contact, Company, Invoice, Product, Appointment, Service, Funnel, Document, Project, Task, TeamMember, UserProfile, AutomationNode, Conversation, Message, FileItem, Goal, SocialPost, Candidate, CanvasItem, Campaign, AccentColor, EmailConfig, SubscriptionPlan, AppModule } from '../types';
-import { INITIAL_DEALS, MOCK_CONTACTS, MOCK_COMPANIES, MOCK_INVOICES, UPCOMING_APPOINTMENTS } from '../constants';
+import { Deal, Contact, Company, Invoice, Product, Appointment, Service, Funnel, Document, Project, Task, TeamMember, UserProfile, AutomationNode, Conversation, Message, FileItem, Goal, SocialPost, Candidate, CanvasItem, Campaign, AccentColor, EmailConfig, SubscriptionPlan, AppModule, Integration, Expense } from '../types';
+import { INITIAL_DEALS, MOCK_CONTACTS, MOCK_COMPANIES, MOCK_INVOICES, UPCOMING_APPOINTMENTS, MOCK_EXPENSES } from '../constants';
 
 // RGB values for Tailwind Colors
 const PALETTES: Record<AccentColor, Record<number, string>> = {
@@ -56,6 +56,13 @@ interface DataContextType {
   sendEmail: (to: string, subject: string, body: string) => Promise<boolean>;
   consumeAiCredit: () => boolean; // Returns true if successful, false if out of credits
 
+  // Integrations
+  integrations: Integration[];
+  connectIntegration: (integration: Omit<Integration, 'status' | 'lastSync'>) => void;
+  disconnectIntegration: (id: string) => void;
+  isIntegrationConnected: (id: string) => boolean;
+  triggerIntegrationAction: (integrationId: string, action: string, data: any) => Promise<boolean>;
+
   // CRM
   deals: Deal[];
   addDeal: (deal: Deal) => void;
@@ -69,6 +76,8 @@ interface DataContextType {
   invoices: Invoice[];
   addInvoice: (invoice: Invoice) => void;
   updateInvoice: (invoice: Invoice) => void;
+  expenses: Expense[];
+  addExpense: (expense: Expense) => void;
   products: Product[];
   addProduct: (product: Product) => void;
   
@@ -161,7 +170,7 @@ export const useData = () => {
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getInitialData = <T,>(key: string, defaultData: T): T => {
     try {
-      const stored = localStorage.getItem(`nexus_${key}`);
+      const stored = localStorage.getItem(`echoes_${key}`);
       return stored ? JSON.parse(stored) : defaultData;
     } catch (e) {
       return defaultData;
@@ -181,11 +190,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [paypalConnected, setPaypalConnected] = useState<boolean>(() => getInitialData('paypalConnected', false));
   const [emailConfig, setEmailConfig] = useState<EmailConfig>(() => getInitialData('emailConfig', {
     provider: 'smtp',
-    fromName: 'Nexus Team',
-    fromEmail: 'noreply@nexus.com',
+    fromName: 'Echoes Team',
+    fromEmail: 'noreply@echoes.com',
     smtpHost: 'smtp.mailtrap.io',
     smtpPort: 2525
   }));
+
+  // Integrations
+  const [integrations, setIntegrations] = useState<Integration[]>(() => getInitialData('integrations', [
+    { id: 'slack', name: 'Slack', status: 'connected', lastSync: '2h ago' },
+    { id: 'stripe', name: 'Stripe', status: 'disconnected' }
+  ]));
 
   // CRM
   const [deals, setDeals] = useState<Deal[]>(() => getInitialData('deals', INITIAL_DEALS));
@@ -194,6 +209,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Payments
   const [invoices, setInvoices] = useState<Invoice[]>(() => getInitialData('invoices', MOCK_INVOICES));
+  const [expenses, setExpenses] = useState<Expense[]>(() => getInitialData('expenses', MOCK_EXPENSES));
   const [products, setProducts] = useState<Product[]>(() => getInitialData('products', []));
   
   // Bookings
@@ -209,7 +225,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: '1', 
       name: 'Webinar Registration', 
       steps: 4, 
-      visits: 5400, 
+      visitors: 5400, 
       conversions: 180, 
       rate: '3.3%', 
       status: 'Active',
@@ -224,7 +240,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: '2', 
       name: 'E-book Magnet', 
       steps: 3, 
-      visits: 2100, 
+      visitors: 2100, 
       conversions: 850, 
       rate: '40.4%', 
       status: 'Active',
@@ -334,7 +350,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Canvas
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>(() => getInitialData('canvasItems', [
       { id: '1', type: 'note', x: 400, y: 300, content: 'Brainstorm: Q4 Strategy', color: 'yellow' },
-      { id: '2', type: 'text', x: 400, y: 250, content: 'Nexus Canvas', color: 'transparent' },
+      { id: '2', type: 'text', x: 400, y: 250, content: 'Echoes Canvas', color: 'transparent' },
   ]));
 
   // Campaigns
@@ -371,46 +387,48 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userProfile, setUserProfile] = useState<UserProfile>(() => getInitialData('userProfile', {
     firstName: 'Jane',
     lastName: 'Doe',
-    email: 'jane@nexus.com',
+    email: 'jane@echoes.com',
     avatar: 'JD',
     aiCredits: 50 // Default for Starter
   }));
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getInitialData('teamMembers', [
-    { id: '1', name: 'Jane Doe', email: 'jane@nexus.com', role: 'Admin', status: 'Active', department: 'Management' },
-    { id: '2', name: 'John Smith', email: 'john@nexus.com', role: 'Editor', status: 'Active', department: 'Sales' },
-    { id: '3', name: 'Sarah Lee', email: 'sarah@nexus.com', role: 'Viewer', status: 'Active', department: 'Engineering' },
+    { id: '1', name: 'Jane Doe', email: 'jane@echoes.com', role: 'Admin', status: 'Active', department: 'Management' },
+    { id: '2', name: 'John Smith', email: 'john@echoes.com', role: 'Editor', status: 'Active', department: 'Sales' },
+    { id: '3', name: 'Sarah Lee', email: 'sarah@echoes.com', role: 'Viewer', status: 'Active', department: 'Engineering' },
   ]));
 
   // --- Persistence Effects ---
-  useEffect(() => localStorage.setItem('nexus_theme', JSON.stringify(theme)), [theme]);
-  useEffect(() => localStorage.setItem('nexus_accentColor', JSON.stringify(accentColor)), [accentColor]);
-  useEffect(() => localStorage.setItem('nexus_subscriptionPlan', JSON.stringify(subscriptionPlan)), [subscriptionPlan]);
-  useEffect(() => localStorage.setItem('nexus_enabledModules', JSON.stringify(enabledModules)), [enabledModules]);
-  useEffect(() => localStorage.setItem('nexus_stripeConnected', JSON.stringify(stripeConnected)), [stripeConnected]);
-  useEffect(() => localStorage.setItem('nexus_paypalConnected', JSON.stringify(paypalConnected)), [paypalConnected]);
-  useEffect(() => localStorage.setItem('nexus_emailConfig', JSON.stringify(emailConfig)), [emailConfig]);
-  useEffect(() => localStorage.setItem('nexus_deals', JSON.stringify(deals)), [deals]);
-  useEffect(() => localStorage.setItem('nexus_contacts', JSON.stringify(contacts)), [contacts]);
-  useEffect(() => localStorage.setItem('nexus_companies', JSON.stringify(companies)), [companies]);
-  useEffect(() => localStorage.setItem('nexus_invoices', JSON.stringify(invoices)), [invoices]);
-  useEffect(() => localStorage.setItem('nexus_products', JSON.stringify(products)), [products]);
-  useEffect(() => localStorage.setItem('nexus_appointments', JSON.stringify(appointments)), [appointments]);
-  useEffect(() => localStorage.setItem('nexus_services', JSON.stringify(services)), [services]);
-  useEffect(() => localStorage.setItem('nexus_funnels', JSON.stringify(funnels)), [funnels]);
-  useEffect(() => localStorage.setItem('nexus_documents', JSON.stringify(documents)), [documents]);
-  useEffect(() => localStorage.setItem('nexus_projects', JSON.stringify(projects)), [projects]);
-  useEffect(() => localStorage.setItem('nexus_tasks', JSON.stringify(tasks)), [tasks]);
-  useEffect(() => localStorage.setItem('nexus_conversations', JSON.stringify(conversations)), [conversations]);
-  useEffect(() => localStorage.setItem('nexus_messages', JSON.stringify(messages)), [messages]);
-  useEffect(() => localStorage.setItem('nexus_files', JSON.stringify(files)), [files]);
-  useEffect(() => localStorage.setItem('nexus_goals', JSON.stringify(goals)), [goals]);
-  useEffect(() => localStorage.setItem('nexus_socialPosts', JSON.stringify(socialPosts)), [socialPosts]);
-  useEffect(() => localStorage.setItem('nexus_candidates', JSON.stringify(candidates)), [candidates]);
-  useEffect(() => localStorage.setItem('nexus_canvasItems', JSON.stringify(canvasItems)), [canvasItems]);
-  useEffect(() => localStorage.setItem('nexus_campaigns', JSON.stringify(campaigns)), [campaigns]);
-  useEffect(() => localStorage.setItem('nexus_automationNodes', JSON.stringify(automationNodes)), [automationNodes]);
-  useEffect(() => localStorage.setItem('nexus_userProfile', JSON.stringify(userProfile)), [userProfile]);
-  useEffect(() => localStorage.setItem('nexus_teamMembers', JSON.stringify(teamMembers)), [teamMembers]);
+  useEffect(() => localStorage.setItem('echoes_theme', JSON.stringify(theme)), [theme]);
+  useEffect(() => localStorage.setItem('echoes_accentColor', JSON.stringify(accentColor)), [accentColor]);
+  useEffect(() => localStorage.setItem('echoes_subscriptionPlan', JSON.stringify(subscriptionPlan)), [subscriptionPlan]);
+  useEffect(() => localStorage.setItem('echoes_enabledModules', JSON.stringify(enabledModules)), [enabledModules]);
+  useEffect(() => localStorage.setItem('echoes_stripeConnected', JSON.stringify(stripeConnected)), [stripeConnected]);
+  useEffect(() => localStorage.setItem('echoes_paypalConnected', JSON.stringify(paypalConnected)), [paypalConnected]);
+  useEffect(() => localStorage.setItem('echoes_emailConfig', JSON.stringify(emailConfig)), [emailConfig]);
+  useEffect(() => localStorage.setItem('echoes_integrations', JSON.stringify(integrations)), [integrations]);
+  useEffect(() => localStorage.setItem('echoes_deals', JSON.stringify(deals)), [deals]);
+  useEffect(() => localStorage.setItem('echoes_contacts', JSON.stringify(contacts)), [contacts]);
+  useEffect(() => localStorage.setItem('echoes_companies', JSON.stringify(companies)), [companies]);
+  useEffect(() => localStorage.setItem('echoes_invoices', JSON.stringify(invoices)), [invoices]);
+  useEffect(() => localStorage.setItem('echoes_expenses', JSON.stringify(expenses)), [expenses]);
+  useEffect(() => localStorage.setItem('echoes_products', JSON.stringify(products)), [products]);
+  useEffect(() => localStorage.setItem('echoes_appointments', JSON.stringify(appointments)), [appointments]);
+  useEffect(() => localStorage.setItem('echoes_services', JSON.stringify(services)), [services]);
+  useEffect(() => localStorage.setItem('echoes_funnels', JSON.stringify(funnels)), [funnels]);
+  useEffect(() => localStorage.setItem('echoes_documents', JSON.stringify(documents)), [documents]);
+  useEffect(() => localStorage.setItem('echoes_projects', JSON.stringify(projects)), [projects]);
+  useEffect(() => localStorage.setItem('echoes_tasks', JSON.stringify(tasks)), [tasks]);
+  useEffect(() => localStorage.setItem('echoes_conversations', JSON.stringify(conversations)), [conversations]);
+  useEffect(() => localStorage.setItem('echoes_messages', JSON.stringify(messages)), [messages]);
+  useEffect(() => localStorage.setItem('echoes_files', JSON.stringify(files)), [files]);
+  useEffect(() => localStorage.setItem('echoes_goals', JSON.stringify(goals)), [goals]);
+  useEffect(() => localStorage.setItem('echoes_socialPosts', JSON.stringify(socialPosts)), [socialPosts]);
+  useEffect(() => localStorage.setItem('echoes_candidates', JSON.stringify(candidates)), [candidates]);
+  useEffect(() => localStorage.setItem('echoes_canvasItems', JSON.stringify(canvasItems)), [canvasItems]);
+  useEffect(() => localStorage.setItem('echoes_campaigns', JSON.stringify(campaigns)), [campaigns]);
+  useEffect(() => localStorage.setItem('echoes_automationNodes', JSON.stringify(automationNodes)), [automationNodes]);
+  useEffect(() => localStorage.setItem('echoes_userProfile', JSON.stringify(userProfile)), [userProfile]);
+  useEffect(() => localStorage.setItem('echoes_teamMembers', JSON.stringify(teamMembers)), [teamMembers]);
 
   // Apply Theme
   useEffect(() => {
@@ -461,6 +479,43 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
   };
 
+  // Integration Methods
+  const connectIntegration = (int: Omit<Integration, 'status' | 'lastSync'>) => {
+    setIntegrations(prev => {
+        const existing = prev.find(i => i.id === int.id);
+        if (existing) {
+            return prev.map(i => i.id === int.id ? { ...i, ...int, status: 'connected', lastSync: 'Just now' } as Integration : i);
+        }
+        return [...prev, { ...int, status: 'connected', lastSync: 'Just now' } as Integration];
+    });
+  };
+
+  const disconnectIntegration = (id: string) => {
+    setIntegrations(prev => prev.map(i => i.id === id ? { ...i, status: 'disconnected' } : i));
+  };
+
+  const isIntegrationConnected = (id: string) => {
+      return integrations.some(i => i.id === id && i.status === 'connected');
+  };
+
+  const triggerIntegrationAction = async (integrationId: string, action: string, data: any): Promise<boolean> => {
+      return new Promise((resolve) => {
+          setTimeout(() => {
+              console.group(`🔗 Integration Trigger: ${integrationId}`);
+              console.log(`Action: ${action}`);
+              console.log(`Payload:`, data);
+              console.groupEnd();
+              
+              if (!isIntegrationConnected(integrationId)) {
+                  console.error(`Integration ${integrationId} not connected.`);
+                  resolve(false);
+                  return;
+              }
+              resolve(true);
+          }, 800);
+      });
+  };
+
   const sendEmail = async (to: string, subject: string, body: string): Promise<boolean> => {
     return new Promise((resolve) => {
         // Simulate network delay
@@ -496,6 +551,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addCompany = (company: Company) => setCompanies(prev => [company, ...prev]);
   const addInvoice = (invoice: Invoice) => setInvoices(prev => [invoice, ...prev]);
   const updateInvoice = (updatedInvoice: Invoice) => setInvoices(prev => prev.map(i => i.id === updatedInvoice.id ? updatedInvoice : i));
+  const addExpense = (expense: Expense) => setExpenses(prev => [expense, ...prev]);
   const addProduct = (product: Product) => setProducts(prev => [product, ...prev]);
   const addAppointment = (appointment: Appointment) => setAppointments(prev => [appointment, ...prev]);
   const addService = (service: Service) => setServices(prev => [service, ...prev]);
@@ -559,10 +615,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       paypalConnected, setPaypalConnected,
       emailConfig, updateEmailConfig, sendEmail,
       consumeAiCredit,
+      integrations, connectIntegration, disconnectIntegration, isIntegrationConnected, triggerIntegrationAction,
       deals, addDeal, updateDeal,
       contacts, addContact,
       companies, addCompany,
       invoices, addInvoice, updateInvoice,
+      expenses, addExpense,
       products, addProduct,
       appointments, addAppointment,
       services, addService,

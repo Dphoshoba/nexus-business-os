@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { SectionHeader, Card, Button, Input, Badge } from '../components/ui/Primitives';
 import { Upload, Camera, ScanLine, Loader2, FileText, User, Receipt, X, Check, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -35,7 +36,8 @@ export const SmartScan: React.FC = () => {
         setIsScanning(true);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            // Fix: Obtain apiKey correctly from process.env.API_KEY
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const base64Data = selectedImage.split(',')[1];
             
             const prompt = `Analyze this image. Identify if it is a "Receipt", "Business Card", or "General Document". 
@@ -47,7 +49,7 @@ export const SmartScan: React.FC = () => {
             Return strictly valid JSON.`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3-flash-preview',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
@@ -110,7 +112,7 @@ export const SmartScan: React.FC = () => {
     return (
         <div className="h-full flex flex-col">
             <SectionHeader
-                title="Nexus Lens"
+                title="Echoes Lens"
                 subtitle="Multimodal scanner for receipts, cards, and docs."
             />
 

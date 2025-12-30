@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { SectionHeader, Button, Card, Modal, Input } from '../components/ui/Primitives';
 import { 
@@ -168,7 +169,7 @@ export const Canvas: React.FC = () => {
                 <button onClick={() => setActiveTool('select')} className={`p-2 rounded-lg transition-colors ${activeTool === 'select' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20' : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted-dark'}`} title="Select (V)">
                     <MousePointer2 className="w-5 h-5" />
                 </button>
-                <div className="w-px h-6 bg-border dark:bg-border-dark mx-1"></div>
+                <div className="w-px h-6 bg-border dark:border-border-dark mx-1"></div>
                 <button onClick={() => setActiveTool('note')} className={`p-2 rounded-lg transition-colors ${activeTool === 'note' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20' : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted-dark'}`} title="Sticky Note (N)">
                     <StickyNote className="w-5 h-5" />
                 </button>
@@ -178,7 +179,7 @@ export const Canvas: React.FC = () => {
                 <button onClick={() => setActiveTool('shape')} className={`p-2 rounded-lg transition-colors ${activeTool === 'shape' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20' : 'text-text-secondary hover:bg-surface-muted dark:hover:bg-surface-muted-dark'}`} title="Shape (R)">
                     <Square className="w-5 h-5" />
                 </button>
-                <div className="w-px h-6 bg-border dark:bg-border-dark mx-1"></div>
+                <div className="w-px h-6 bg-border dark:border-border-dark mx-1"></div>
                 <button onClick={() => setIsAiModalOpen(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md text-sm font-medium">
                     <Sparkles className="w-4 h-4" /> AI Brainstorm
                 </button>
@@ -296,6 +297,12 @@ export const Canvas: React.FC = () => {
                     </div>
                 </form>
             </Modal>
+
+            <style>{`
+                .font-handwriting {
+                    font-family: 'Inter', cursive;
+                }
+            `}</style>
         </div>
     );
 };

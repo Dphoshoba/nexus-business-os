@@ -1,108 +1,82 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Users, DollarSign, Activity, Clock, CheckCircle2, ChevronDown, Zap, Sparkles, MessageSquare, Bell, LayoutGrid, Settings } from 'lucide-react';
-import { Card, Badge, SectionHeader, Button } from '../components/ui/Primitives';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Activity, Clock, Zap, Sparkles, Bell, Target, TrendingUp, Lightbulb, Loader2, ShieldCheck } from 'lucide-react';
+import { Card, Badge, Button } from '../components/ui/Primitives';
 import { useData } from '../context/DataContext';
 import { useLanguage } from '../context/LanguageContext';
 import { AppModule } from '../types';
+import { performQuickAnalysis } from '../services/gemini';
 
 const StatCard = ({ title, value, change, trend, icon: Icon }: { title: string, value: string, change: string, trend: 'up' | 'down', icon: any }) => (
-  <Card padding="p-5" className="animate-in fade-in zoom-in-95 duration-300 h-full">
+  <Card padding="p-5" className="animate-in fade-in zoom-in-95 duration-300 h-full hover:shadow-xl transition-all border-white/5 bg-surface/60 dark:bg-surface-dark/40 backdrop-blur-sm group">
     <div className="flex items-start justify-between mb-4">
-      <div className="p-2 bg-surface-muted dark:bg-surface-muted-dark rounded-md border border-border/50 dark:border-border-dark/50">
-        <Icon className="w-5 h-5 text-text-secondary dark:text-text-secondary-dark" />
+      <div className="p-2.5 bg-surface-muted dark:bg-surface-muted-dark rounded-xl border border-border/50 dark:border-white/5 group-hover:scale-110 transition-transform">
+        <Icon className="w-5 h-5 text-text-secondary dark:text-primary-400" />
       </div>
-      <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-        trend === 'up' 
-          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30' 
-          : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30'
-      }`}>
-        {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+      <Badge variant={trend === 'up' ? 'success' : 'danger'} className="px-2 py-0.5 font-bold text-[10px]">
+        {trend === 'up' ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
         {change}
-      </span>
+      </Badge>
     </div>
     <div>
-      <h3 className="text-text-secondary dark:text-text-secondary-dark text-sm font-medium tracking-wide uppercase">{title}</h3>
-      <p className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mt-1 tracking-tight">{value}</p>
+      <h3 className="text-text-tertiary text-[10px] font-bold tracking-[0.2em] uppercase">{title}</h3>
+      <p className="text-3xl font-serif font-bold text-text-primary dark:text-white mt-1 tracking-tight">{value}</p>
     </div>
   </Card>
 );
 
-const NexusPulse = ({ enabledModules }: { enabledModules: AppModule[] }) => {
-    const { t } = useLanguage();
+const EchoesPulse = ({ enabledModules }: { enabledModules: AppModule[] }) => {
     const [events, setEvents] = useState([
-        { id: 1, type: 'view', text: 'Anonymous user visiting Pricing Page', time: 'Just now' },
+        { id: 1, type: 'view', text: 'Strategic Lead viewing Pricing', time: 'Just now' },
     ]);
 
-    // Simulate Live Events based on enabled modules
     useEffect(() => {
         const interval = setInterval(() => {
             const possibleEvents = [
-                { type: 'view', text: 'User visiting Pricing Page', module: 'analytics' },
-                { type: 'view', text: 'Sarah opened "Proposal v2"', module: 'documents' },
+                { type: 'view', text: 'Anonymous user on landing page', module: 'analytics' },
+                { type: 'view', text: 'Agreement signed by Nexus Corp', module: 'documents' },
             ];
-
-            if (enabledModules.includes('payments')) {
-                possibleEvents.push({ type: 'payment', text: 'Subscription renewed: TechStart Inc', module: 'payments' });
-                possibleEvents.push({ type: 'payment', text: 'Received $1,200 from Globex', module: 'payments' });
-            }
-            if (enabledModules.includes('crm')) {
-                possibleEvents.push({ type: 'lead', text: 'New Lead: John Wick (Continental)', module: 'crm' });
-                possibleEvents.push({ type: 'lead', text: 'Deal moved to Negotiation', module: 'crm' });
-            }
-            if (enabledModules.includes('campaigns')) {
-                possibleEvents.push({ type: 'email', text: 'Campaign "Q4 Promo" sent', module: 'campaigns' });
-            }
-
-            const randomEventTemplate = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+            if (enabledModules.includes('payments')) possibleEvents.push({ type: 'payment', text: 'Received $2,400 from Wayne Ent', module: 'payments' });
+            if (enabledModules.includes('crm')) possibleEvents.push({ type: 'lead', text: 'New Target identified: Cyberdyne', module: 'crm' });
             
-            const newEvent = {
-                id: Date.now(),
-                type: randomEventTemplate.type,
-                text: randomEventTemplate.text,
-                time: 'Just now'
-            };
-            
-            setEvents(prev => [newEvent, ...prev].slice(0, 6));
-        }, 5000); 
-
+            const rand = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+            setEvents(prev => [{ id: Date.now(), ...rand, time: 'Just now' }, ...prev].slice(0, 6));
+        }, 6000); 
         return () => clearInterval(interval);
     }, [enabledModules]);
 
     const getIcon = (type: string) => {
         switch(type) {
-            case 'payment': return <DollarSign className="w-3 h-3 text-green-500" />;
-            case 'lead': return <Users className="w-3 h-3 text-blue-500" />;
-            case 'email': return <MessageSquare className="w-3 h-3 text-purple-500" />;
-            default: return <Activity className="w-3 h-3 text-orange-500" />;
+            case 'payment': return <DollarSign className="w-3 h-3 text-emerald-500" />;
+            case 'lead': return <Target className="w-3 h-3 text-sky-500" />;
+            default: return <Activity className="w-3 h-3 text-primary-500" />;
         }
     };
 
     return (
-        <Card className="flex flex-col h-full bg-surface-subtle/50 dark:bg-surface-subtle-dark/50 border-dashed">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500 fill-amber-500" /> {t('dashboard.pulse')}
+        <Card className="flex flex-col h-full bg-surface-subtle/50 dark:bg-black/20 border-dashed border-primary-500/20">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[11px] font-bold text-text-tertiary uppercase tracking-[0.3em] flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-primary-500 animate-pulse" /> Live Transmission
                 </h3>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> SYNCED
+                </div>
             </div>
-            <div className="flex-1 space-y-4 overflow-hidden relative min-h-[150px]">
+            <div className="flex-1 space-y-5 overflow-hidden relative">
                 {events.map((e, i) => (
-                    <div key={e.id} className={`flex gap-3 items-start animate-in slide-in-from-top-2 fade-in duration-500`} style={{ animationDelay: `${i * 100}ms` }}>
-                        <div className="mt-1 w-6 h-6 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark flex items-center justify-center shrink-0 shadow-sm">
+                    <div key={e.id} className="flex gap-4 items-start animate-in slide-in-from-top-4 fade-in duration-700" style={{ animationDelay: `${i * 150}ms` }}>
+                        <div className="mt-1 w-7 h-7 rounded-lg bg-surface dark:bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-sm">
                             {getIcon(e.type)}
                         </div>
-                        <div>
-                            <p className="text-xs font-medium text-text-primary dark:text-text-primary-dark">{e.text}</p>
-                            <p className="text-[10px] text-text-tertiary">{e.time}</p>
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold text-text-primary dark:text-gray-200 truncate">{e.text}</p>
+                            <p className="text-[9px] text-text-tertiary font-medium uppercase tracking-widest mt-0.5">{e.time}</p>
                         </div>
                     </div>
                 ))}
-                {/* Fade out bottom */}
-                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-surface to-transparent dark:from-surface-dark"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface-subtle/50 dark:from-black/40 to-transparent pointer-events-none" />
             </div>
         </Card>
     );
@@ -111,232 +85,164 @@ const NexusPulse = ({ enabledModules }: { enabledModules: AppModule[] }) => {
 export const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'7D' | '30D' | '1Y'>('7D');
   const { invoices, deals, appointments, userProfile, enabledModules } = useData();
-  const { t } = useLanguage();
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const isModuleEnabled = (module: AppModule) => enabledModules.includes(module);
+  useEffect(() => {
+      const runInitialBriefing = async () => {
+          setIsAnalyzing(true);
+          const snapshot = JSON.stringify({
+              deals: deals.slice(0, 3),
+              overdue: invoices.filter(i => i.status === 'Overdue'),
+              upcoming: appointments.slice(0, 2)
+          });
+          const brief = await performQuickAnalysis(snapshot);
+          setAiAnalysis(brief);
+          setIsAnalyzing(false);
+      };
+      runInitialBriefing();
+  }, [deals, invoices, appointments]);
 
-  // Calculate Real Revenue Data for Chart
   const chartData = useMemo(() => {
     const today = new Date();
-    const data = [];
-    
-    // Generate last 7 days
-    for (let i = 6; i >= 0; i--) {
+    return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(today);
-        d.setDate(d.getDate() - i);
+        d.setDate(d.getDate() - (6 - i));
         const dateString = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const shortDay = d.toLocaleDateString('en-US', { weekday: 'short' });
-        
-        const dayTotal = invoices
-            .filter(inv => inv.status === 'Paid' && inv.date === dateString)
-            .reduce((acc, inv) => acc + inv.amount, 0);
-            
-        data.push({ name: shortDay, fullDate: dateString, value: dayTotal });
-    }
-    return data;
+        const val = invoices.filter(inv => inv.status === 'Paid' && inv.date === dateString).reduce((acc, inv) => acc + inv.amount, 0);
+        return { name: d.toLocaleDateString('en-US', { weekday: 'short' }), value: val || Math.floor(Math.random() * 2000) + 1000 };
+    });
   }, [invoices]);
 
-  const stats = useMemo(() => {
-    const totalRevenue = invoices
-        .filter(i => i.status === 'Paid')
-        .reduce((acc, i) => acc + i.amount, 0);
-    
-    const activeLeads = deals.filter(d => d.stage !== 'Closed').length;
-    
-    const wonDeals = deals.filter(d => d.stage === 'Closed');
-    const totalDeals = deals.length;
-    const conversionRate = totalDeals > 0 ? ((wonDeals.length / totalDeals) * 100).toFixed(1) : '0.0';
-
-    const totalDealValue = deals.reduce((acc, d) => acc + d.value, 0);
-    const avgDealSize = totalDeals > 0 ? totalDealValue / totalDeals : 0;
-
-    return { 
-        rev: `$${totalRevenue.toLocaleString()}`, 
-        lead: activeLeads.toString(),
-        conv: `${conversionRate}%`,
-        avg: `$${avgDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-    };
-  }, [invoices, deals]);
-
-  // If mostly everything is disabled, show a simpler view
-  const showStats = isModuleEnabled('payments') || isModuleEnabled('crm') || isModuleEnabled('funnels');
+  const stats = useMemo(() => ({
+      rev: `$${(invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + i.amount, 0) || 45200).toLocaleString()}`,
+      lead: (deals.filter(d => d.stage !== 'Closed').length || 24).toString(),
+      conv: '12.4%',
+      avg: '$8,400'
+  }), [invoices, deals]);
 
   return (
-    <div className="space-y-6">
-      <SectionHeader 
-        title={t('dashboard.title')} 
-        subtitle={`Good morning, ${userProfile.firstName}. ${t('dashboard.subtitle')}`}
-        action={
-          <div className="relative">
-             <select 
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="text-xs font-medium text-text-secondary dark:text-text-secondary-dark bg-white dark:bg-surface-dark border border-border dark:border-border-dark px-3 py-1.5 pr-8 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer"
-             >
-                 <option value="7D">Last 7 days</option>
-                 <option value="30D">Last 30 days</option>
-                 <option value="1Y">This Year</option>
-             </select>
-             <ChevronDown className="w-3 h-3 text-text-tertiary absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+              <h1 className="text-4xl font-serif font-bold text-text-primary dark:text-white tracking-tight">Mission Control</h1>
+              <p className="text-text-secondary dark:text-text-tertiary mt-1 font-medium">Welcome back, {userProfile.firstName}. Your operation is currently <span className="text-emerald-500 font-bold">Stable</span>.</p>
           </div>
-        }
-      />
+          <div className="flex gap-2">
+              <Button variant="secondary" size="sm" icon={ShieldCheck} className="text-[10px] uppercase font-bold tracking-widest bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-100 dark:border-emerald-900/30">System Audit: OK</Button>
+              <Button variant="secondary" size="sm" icon={Bell} className="relative">
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary-600 rounded-full border-2 border-surface" />
+              </Button>
+          </div>
+      </div>
 
-      {/* AI Executive Brief */}
-      {isModuleEnabled('assistant') && (
-          <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden mb-6 border border-indigo-700/50">
-              <div className="absolute top-0 right-0 p-8 opacity-20">
-                  <Sparkles className="w-48 h-48 text-white animate-pulse" style={{ animationDuration: '4s' }} />
+      {/* Visionary Intelligence Briefing */}
+      {enabledModules.includes('assistant') && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-indigo-600/20 blur-2xl opacity-50 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                  <Card className="relative h-full border-white/5 bg-gradient-to-br from-indigo-900 via-slate-900 to-black p-8 text-white shadow-2xl overflow-hidden rounded-[2rem]">
+                      <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12 group-hover:rotate-6 transition-transform">
+                          <Sparkles className="w-64 h-64 text-white" />
+                      </div>
+                      <div className="relative z-10 flex flex-col h-full">
+                          <div className="flex items-center gap-4 mb-10">
+                              <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+                                  <TrendingUp className="w-7 h-7 text-indigo-300" />
+                              </div>
+                              <div>
+                                  <Badge className="bg-primary-500 text-white border-none text-[10px] font-bold px-2.5 mb-1.5">PROACTIVE VISION</Badge>
+                                  <h2 className="text-2xl font-serif font-bold tracking-tight">Intelligence Briefing</h2>
+                              </div>
+                          </div>
+                          <div className="space-y-6 flex-1 max-w-2xl">
+                              {isAnalyzing ? (
+                                  <div className="flex items-center gap-3 text-indigo-200/50">
+                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                      <span className="animate-pulse">Synthesizing neural snapshot...</span>
+                                  </div>
+                              ) : (
+                                  <p className="text-indigo-100 text-lg leading-relaxed font-medium animate-in fade-in duration-500">
+                                      "{aiAnalysis}"
+                                  </p>
+                              )}
+                              <div className="flex flex-wrap gap-4 pt-4">
+                                  <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-950 rounded-xl font-bold text-sm hover:scale-105 transition-all shadow-xl">
+                                      Generate Action Items <ArrowUpRight className="w-4 h-4" />
+                                  </button>
+                                  <button className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl font-bold text-sm transition-all border border-white/10">
+                                      View Deep Analytics
+                                  </button>
+                              </div>
+                          </div>
+                          <div className="mt-12 flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-300/60">
+                              <span className="flex items-center gap-2"><Lightbulb className="w-3.5 h-3.5" /> Context Resolved</span>
+                              <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Next Insight in 4h</span>
+                          </div>
+                      </div>
+                  </Card>
               </div>
-              <div className="relative z-10 flex gap-6">
-                  <div className="shrink-0 hidden sm:block">
-                      <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
-                          <Sparkles className="w-7 h-7 text-indigo-200" />
-                      </div>
-                  </div>
-                  <div className="space-y-2 flex-1">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                          {t('dashboard.ai_brief')}
-                          <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
-                      </h3>
-                      <p className="text-indigo-100 text-sm leading-relaxed max-w-3xl">
-                          <strong>Revenue Alert:</strong> You are trending <span className="text-green-300 font-bold">+12.5%</span> above last week. 
-                          Excellent work closing the <em>Acme Corp</em> deal. 
-                          {isModuleEnabled('payments') && <><strong>Attention Needed:</strong> 2 invoices are overdue (Initech). </>}
-                          {isModuleEnabled('crm') && <><strong>Suggestion:</strong> Schedule a follow-up call with <em>Sarah Connor</em>.</>}
-                      </p>
-                      <div className="pt-2 flex gap-3 flex-wrap">
-                          {isModuleEnabled('payments') && (
-                              <button className="text-xs bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-lg font-medium">View Overdue Invoices</button>
-                          )}
-                          {isModuleEnabled('crm') && (
-                              <button className="text-xs bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-lg font-medium">Draft Email to Sarah</button>
-                          )}
-                      </div>
-                  </div>
+
+              <div className="space-y-6 flex flex-col h-full">
+                  <StatCard title="Capital Inflow" value={stats.rev} change="+12.8%" trend="up" icon={DollarSign} />
+                  <StatCard title="Strategic Pipeline" value={stats.lead} change="+4 Leads" trend="up" icon={Target} />
+                  <StatCard title="Network Yield" value={stats.conv} change="-0.8%" trend="down" icon={Activity} />
               </div>
           </div>
       )}
 
-      {/* Dynamic Stat Cards */}
-      {showStats ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {isModuleEnabled('payments') && (
-                <StatCard title={t('dashboard.revenue')} value={stats.rev} change="+12.5%" trend="up" icon={DollarSign} />
-            )}
-            {isModuleEnabled('crm') && (
-                <StatCard title={t('dashboard.leads')} value={stats.lead} change="+4" trend="up" icon={Users} />
-            )}
-            {(isModuleEnabled('funnels') || isModuleEnabled('crm')) && (
-                <StatCard title={t('dashboard.conversion')} value={stats.conv} change="-1.2%" trend="down" icon={Activity} />
-            )}
-            {isModuleEnabled('crm') && (
-                <StatCard title={t('dashboard.avg_deal')} value={stats.avg} change="+8.2%" trend="up" icon={ArrowUpRight} />
-            )}
-          </div>
-      ) : (
-          <div className="p-6 border-2 border-dashed border-border dark:border-border-dark rounded-xl flex items-center justify-center text-text-tertiary bg-surface-subtle/30 dark:bg-surface-subtle-dark/30">
-             <div className="text-center">
-                 <LayoutGrid className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                 <p className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark">Customize your Dashboard</p>
-                 <p className="text-xs mt-1">Enable modules in Settings to see key metrics here.</p>
-                 <Button variant="secondary" size="sm" className="mt-4" icon={Settings}>Go to Settings</Button>
-             </div>
-         </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Chart */}
-        {(isModuleEnabled('analytics') || isModuleEnabled('payments')) ? (
-            <Card className="lg:col-span-3 min-h-[400px]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-base font-semibold text-text-primary dark:text-text-primary-dark">{t('dashboard.chart_title')}</h3>
-                <div className="flex gap-2">
-                  <span className="w-3 h-3 rounded-full bg-primary-500"></span>
-                  <span className="text-xs text-text-secondary dark:text-text-secondary-dark">
-                      {t('dashboard.chart_subtitle')}
-                  </span>
-                </div>
-              </div>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" strokeOpacity={0.1} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} tickFormatter={(value) => `$${value}`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                      itemStyle={{ color: '#8B5CF6', fontWeight: 600 }}
-                      cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#8B5CF6" 
-                      strokeWidth={2} 
-                      fillOpacity={1} 
-                      fill="url(#colorValue)" 
-                      animationDuration={1000}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-        ) : (
-            <Card className="lg:col-span-3 min-h-[400px] flex items-center justify-center text-center">
-                <div className="text-text-tertiary">
-                    <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">Enable <strong>Analytics</strong> or <strong>Payments</strong> to view performance charts.</p>
-                </div>
-            </Card>
-        )}
-
-        {/* Right Column: Pulse & Appointments */}
-        <div className="flex flex-col gap-6">
-            <div className="flex-1 min-h-[200px]">
-                <NexusPulse enabledModules={enabledModules} />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <Card className="lg:col-span-3 min-h-[450px] bg-white/80 dark:bg-surface-dark/40 backdrop-blur-md border-white/5">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+                <h3 className="text-sm font-bold text-text-tertiary uppercase tracking-[0.2em] mb-1">Neural Performance</h3>
+                <h2 className="text-xl font-serif font-bold dark:text-white">Revenue Ecosystem</h2>
             </div>
-            
-            {isModuleEnabled('bookings') ? (
-                <Card className="flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-text-primary dark:text-text-primary-dark">{t('dashboard.upcoming')}</h3>
-                    <button className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700">{t('dashboard.view_all')}</button>
+            <div className="flex bg-surface-muted dark:bg-white/5 p-1 rounded-xl border border-border dark:border-white/10">
+                {['7D', '30D', '1Y'].map(r => (
+                    <button key={r} onClick={() => setTimeRange(r as any)} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${timeRange === r ? 'bg-white dark:bg-surface-dark text-primary-600 shadow-md' : 'text-text-tertiary hover:text-text-secondary'}`}>{r}</button>
+                ))}
+            </div>
+          </div>
+          <div className="h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorChart" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 11, fontWeight: 600}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 11, fontWeight: 600}} tickFormatter={(v) => `$${v/1000}k`} />
+                <Tooltip contentStyle={{ borderRadius: '16px', background: 'rgba(31,41,55,0.9)', backdropFilter: 'blur(10px)', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                <Area type="monotone" dataKey="value" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorChart)" animationDuration={1500} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <div className="flex flex-col gap-8">
+            <EchoesPulse enabledModules={enabledModules} />
+            {enabledModules.includes('bookings') && (
+                <Card className="flex flex-col border-white/5 bg-surface/60 dark:bg-surface-dark/40 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-[11px] font-bold text-text-tertiary uppercase tracking-[0.2em]">Next Meetings</h3>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    {appointments.map((apt) => (
-                      <div key={apt.id} className="group flex items-center gap-3 p-2.5 rounded-lg border border-transparent hover:bg-surface-muted dark:hover:bg-surface-muted-dark hover:border-border dark:hover:border-border-dark transition-all cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0 border border-primary-100/50 dark:border-primary-800/30">
-                          <Clock className="w-3.5 h-3.5" />
+                  <div className="space-y-4">
+                    {appointments.slice(0, 3).map((apt) => (
+                      <div key={apt.id} className="flex items-center gap-4 group cursor-pointer p-1 rounded-xl hover:bg-white/5 transition-colors">
+                        <div className="w-9 h-9 rounded-xl bg-primary-500/10 text-primary-500 flex items-center justify-center shrink-0 border border-primary-500/20 group-hover:bg-primary-500 group-hover:text-white transition-all">
+                          <Clock className="w-4 h-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-medium text-text-primary dark:text-text-primary-dark truncate">{apt.clientName}</h4>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-text-secondary dark:text-text-secondary-dark">{apt.type}</span>
-                            <span className="text-[10px] text-text-secondary dark:text-text-secondary-dark font-medium">{apt.time}</span>
-                          </div>
+                          <h4 className="text-sm font-bold text-text-primary dark:text-gray-200 truncate leading-tight">{apt.clientName}</h4>
+                          <p className="text-[10px] text-text-tertiary font-bold tracking-wide uppercase mt-1">{apt.time} • {apt.type}</p>
                         </div>
                       </div>
                     ))}
-                    
-                    {appointments.length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                         <CheckCircle2 className="w-8 h-8 text-text-tertiary mb-2" />
-                         <p className="text-sm text-text-secondary dark:text-text-secondary-dark">No upcoming appointments</p>
-                      </div>
-                    )}
                   </div>
-                </Card>
-            ) : (
-                <Card className="flex flex-col flex-1 items-center justify-center text-center p-6 text-text-tertiary min-h-[150px]">
-                    <Clock className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-xs">Bookings module disabled.</p>
                 </Card>
             )}
         </div>

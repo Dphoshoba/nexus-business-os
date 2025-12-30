@@ -1,18 +1,14 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the client.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
-const BASE_INSTRUCTION = `You are "Nexus AI", a highly intelligent business operating system assistant.
-Your goal is to assist the user by analyzing their live business data (CRM, Payments, Schedule) and providing actionable insights, drafts, or summaries.
+const BASE_INSTRUCTION = `You are "Echoes AI", the core intelligence engine for the "Echoes & Visions" Business OS.
+Your goal is to provide strategic clarity from fragmented data. 
 
 GUIDELINES:
 1. Use the provided JSON context to answer questions accurately.
-2. If asking about deals, refer to specific values and stages.
-3. If asking about schedule, refer to specific times and clients.
-4. Tone: Professional, executive, concise, and helpful.
-5. Format: Use bullet points for lists. Keep paragraphs short.
+2. refer to specific values, dates, and names.
+3. Tone: Professional, visionary, extremely concise.
+4. If providing a summary, use a "CEO-level" narrative style.
 `;
 
 export const sendMessageToGemini = async (
@@ -21,18 +17,17 @@ export const sendMessageToGemini = async (
   contextData: string = ''
 ): Promise<string> => {
   try {
-    // Get the current language from the document root which is updated by LanguageContext
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const currentLang = document.documentElement.lang || 'en';
-    
-    // Inject the current state of the application into the system instruction
     const systemInstruction = contextData 
       ? `${BASE_INSTRUCTION}\n\nCURRENT BUSINESS DATA CONTEXT:\n${contextData}\n\nIMPORTANT: Respond in the following language code: ${currentLang}`
       : `${BASE_INSTRUCTION}\n\nIMPORTANT: Respond in the following language code: ${currentLang}`;
 
     const chat = ai.chats.create({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: systemInstruction,
+        temperature: 0.7,
       },
       history: history.map(h => ({
         role: h.role,
@@ -44,6 +39,30 @@ export const sendMessageToGemini = async (
     return result.text || "I couldn't process that request.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "I'm having trouble connecting to the neural network right now. Please check your API key.";
+    return "Neural link interrupted. Please verify your connection.";
   }
+};
+
+/**
+ * Performs a one-off analysis of business state for proactive dashboard insights.
+ */
+export const performQuickAnalysis = async (contextData: string): Promise<string> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Analyze this business snapshot and provide a one-sentence strategic narrative for the CEO. 
+            Highlight the #1 most important thing they should focus on today based on their deals, invoices, and schedule.
+            
+            DATA:
+            ${contextData}`,
+            config: {
+                temperature: 0.4,
+                maxOutputTokens: 150
+            }
+        });
+        return response.text || "Data stream active. Analyzing current trajectory...";
+    } catch (e) {
+        return "Intelligence engine standby. Manual review recommended.";
+    }
 };

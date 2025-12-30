@@ -5,7 +5,7 @@ import {
     Plus, MoreHorizontal, Filter, Search, Building2, User, GripVertical, 
     Sparkles, Loader2, Mail, Phone, Calendar, DollarSign, Clock, 
     ArrowUpRight, FileText, CheckCircle2, Tag, ExternalLink, StickyNote,
-    BrainCircuit
+    BrainCircuit, MessageSquare, Send
 } from 'lucide-react';
 import { Button, Card, Badge, SectionHeader, Tabs, Modal, Input, Drawer } from '../components/ui/Primitives';
 import { useNotifications } from '../components/ui/NotificationSystem';
@@ -14,7 +14,7 @@ import { sendMessageToGemini } from '../services/gemini';
 
 export const CRM: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Deals');
-  const { deals, contacts, companies, invoices, appointments, addDeal, updateDeal, addContact, addCompany } = useData();
+  const { deals, contacts, companies, invoices, appointments, addDeal, updateDeal, addContact, addCompany, isIntegrationConnected, triggerIntegrationAction } = useData();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addNotification } = useNotifications();
@@ -24,6 +24,7 @@ export const CRM: React.FC = () => {
   const [selectedDealForAi, setSelectedDealForAi] = useState<Deal | null>(null);
   const [aiOutput, setAiOutput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isPushingToSlack, setIsPushingToSlack] = useState(false);
 
   // Customer 360 Drawer
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -101,6 +102,23 @@ export const CRM: React.FC = () => {
       setIsAiLoading(false);
   };
 
+  const handleSlackPush = async () => {
+      if (!selectedDealForAi) return;
+      setIsPushingToSlack(true);
+      
+      const success = await triggerIntegrationAction('slack', 'post_message', {
+          channel: '#sales-hq',
+          message: `🚨 *Deal Update:* "${selectedDealForAi.title}" has moved to *${selectedDealForAi.stage}* stage.\n*Value:* $${selectedDealForAi.value.toLocaleString()}\n*Account:* ${selectedDealForAi.company}`
+      });
+
+      if (success) {
+          addNotification({ title: 'Posted to Slack', message: `Update sent to #sales-hq channel.`, type: 'success' });
+      } else {
+          addNotification({ title: 'Slack Error', message: 'Connect Slack in Marketplace first.', type: 'warning' });
+      }
+      setIsPushingToSlack(false);
+  };
+
   // --- Drag and Drop Handlers ---
   const handleDragStart = (e: React.DragEvent, dealId: string) => {
       setDraggedDealId(dealId);
@@ -130,6 +148,13 @@ export const CRM: React.FC = () => {
       if (deal && deal.stage !== stage) {
           updateDeal({ ...deal, stage: stage, lastActivity: 'Just now' });
           addNotification({ title: 'Pipeline Updated', message: `Moved "${deal.title}" to ${stage}`, type: 'success' });
+          
+          // Auto-trigger Slack if connected
+          if (isIntegrationConnected('slack')) {
+              triggerIntegrationAction('slack', 'post_message', {
+                  message: `Deal "${deal.title}" moved to ${stage}`
+              });
+          }
       }
       setDraggedDealId(null);
   };
@@ -236,7 +261,7 @@ export const CRM: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className={`flex-1 bg-surface-subtle/50 dark:bg-surface-subtle-dark/50 rounded-xl border border-border/50 dark:border-border-dark/50 p-2 overflow-y-auto custom-scrollbar transition-colors ${isOver ? 'border-primary-200 dark:border-primary-800' : ''}`}>
+                  <div className={`flex-1 bg-surface-subtle/50 dark:bg-surface-subtle-dark/10 rounded-xl border border-border/50 dark:border-border-dark/50 p-2 overflow-y-auto custom-scrollbar transition-colors ${isOver ? 'border-primary-200 dark:border-primary-800' : ''}`}>
                     <div className="space-y-3 min-h-[100px]">
                       {stageDeals.map((deal) => (
                         <div 
@@ -485,10 +510,10 @@ export const CRM: React.FC = () => {
 
                    <div className="border-t border-border dark:border-border-dark"></div>
 
-                   {/* AI Actions */}
+                   {/* Integration & AI Actions */}
                    <div>
                         <h4 className="text-sm font-semibold text-text-primary dark:text-text-primary-dark mb-3 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary-500" /> AI Assistant
+                            <Sparkles className="w-4 h-4 text-primary-500" /> Smart Actions
                         </h4>
                         <div className="grid grid-cols-2 gap-3">
                             <Button 
@@ -507,7 +532,23 @@ export const CRM: React.FC = () => {
                                 icon={Mail} 
                                 className="justify-center h-auto py-3 bg-surface hover:bg-surface-muted border-primary-200 dark:border-primary-800"
                             >
-                                Draft Follow-up Email
+                                Draft Email
+                            </Button>
+                            <Button 
+                                variant="secondary" 
+                                onClick={handleSlackPush} 
+                                disabled={isPushingToSlack} 
+                                icon={MessageSquare} 
+                                className="justify-center h-auto py-3 bg-surface hover:bg-surface-muted border-[#4A154B]/20 text-[#4A154B] dark:text-[#E01E5A] dark:border-[#4A154B]/50"
+                            >
+                                {isPushingToSlack ? 'Posting...' : 'Push to Slack'}
+                            </Button>
+                            <Button 
+                                variant="secondary" 
+                                icon={Send} 
+                                className="justify-center h-auto py-3 bg-surface hover:bg-surface-muted"
+                            >
+                                Export JSON
                             </Button>
                         </div>
                    </div>
